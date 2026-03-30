@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "909755140007",
+    "project_id": "fixfinder-9bfba",
+    "storage_bucket": "fixfinder-9bfba.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:909755140007:android:b0cbf9bff2b57737755882",
+        "android_client_info": {
+          "package_name": "com.example.fixfinder"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB5D-WrPku9pJqCS5viSBC8UKyHug8SgcQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
