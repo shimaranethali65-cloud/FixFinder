@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 
 class HomeScreenCustomer extends StatelessWidget {
+  HomeScreenCustomer({super.key});
+
   final List<Map<String, String>> services = [
     {"name": "Plumber", "image": "assets/images/plumber.png"},
     {"name": "Electrician", "image": "assets/images/electrician.png"},
     {"name": "Tile Installer", "image": "assets/images/tile.png"},
     {"name": "Ceiling Repair Technician", "image": "assets/images/ceiling.png"},
     {"name": "Appliance Repair Technician", "image": "assets/images/appliance.png"},
-    {"name": "Gardner", "image": "assets/images/gardner.png"},
+    {"name": "Gardener", "image": "assets/images/gardener.png"},
     {"name": "Handyman", "image": "assets/images/handyman.png"},
     {"name": "Painter", "image": "assets/images/painter.png"},
     {"name": "Carpenter", "image": "assets/images/carpenter.png"},
@@ -27,7 +29,14 @@ class HomeScreenCustomer extends StatelessWidget {
             children: [
 
               // 🔙 Back Button
-              Icon(Icons.arrow_back),
+              IconButton(
+                padding: EdgeInsets.zero,
+                alignment: Alignment.centerLeft,
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () {
+                  Navigator.pushReplacementNamed(context, '/login');
+                },
+              ),
 
               SizedBox(height: 10),
 
@@ -96,7 +105,10 @@ class HomeScreenCustomer extends StatelessWidget {
           ),
           child: Padding(
             padding: const EdgeInsets.all(8),
-            child: Image.asset(image),
+            child: Image.asset(
+              image,
+              fit: BoxFit.contain,
+            ),
           ),
         ),
         SizedBox(height: 5),

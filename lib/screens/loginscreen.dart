@@ -1,12 +1,103 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class LoginScreen extends StatelessWidget {
-  LoginScreen({super.key});
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
 
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
   final Color _primaryBlue = const Color(0xFF3D7BE0);
   final Color _borderBlue = const Color(0xFF6C9BFF);
   final Color _circleBlue = const Color(0xFFD4E7FF);
+
+  bool _isLoading = false;
+
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+
+  // ✅ NEW: Get role from Firestore
+  Future<String> getUserRole(String uid) async {
+    final doc = await FirebaseFirestore.instance
+        .collection("users")
+        .doc(uid)
+        .get();
+
+    if (doc.exists) {
+      return doc["role"];
+    } else {
+      return "Customer"; // fallback
+    }
+  }
+
+  void _goToHomeForRole(String role) {
+    final routeName = role == 'Worker' ? '/workerHome' : '/home';
+    Navigator.pushReplacementNamed(context, routeName);
+  }
+
+  // ✅ UPDATED LOGIN FUNCTION
+  Future<void> loginUser() async {
+    if (emailController.text.isEmpty || passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please fill all fields")),
+      );
+      return;
+    }
+
+    FocusScope.of(context).unfocus();
+    setState(() => _isLoading = true);
+
+    try {
+      // 🔐 Firebase Auth Login
+      final userCredential =
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+
+      final uid = userCredential.user!.uid;
+
+      // 📦 Get role from Firestore
+      final role = await getUserRole(uid);
+
+      if (!mounted) return;
+
+      _goToHomeForRole(role);
+    } on FirebaseAuthException catch (e) {
+      String message = "Login failed";
+
+      if (e.code == 'user-not-found') {
+        message = "No user found";
+      } else if (e.code == 'wrong-password') {
+        message = "Incorrect password";
+      } else if (e.code == 'invalid-email') {
+        message = "Invalid email";
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Something went wrong")),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,6 +109,8 @@ class LoginScreen extends StatelessWidget {
           child: Column(
             children: [
               const SizedBox(height: 28),
+
+              // 🔵 Image Circle
               Container(
                 height: 220,
                 width: 220,
@@ -33,7 +126,10 @@ class LoginScreen extends StatelessWidget {
                   ),
                 ),
               ),
+
               const SizedBox(height: 40),
+
+              // 🔷 Card
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.fromLTRB(26, 20, 26, 28),
@@ -58,44 +154,40 @@ class LoginScreen extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
-                          color: Colors.black,
                         ),
                       ),
                     ),
+
                     const SizedBox(height: 18),
-                    const Text(
-                      'Email',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+
+                    const Text('Email'),
                     const SizedBox(height: 8),
+
                     _StyledTextField(
-                      hintText: '',
+                      controller: emailController,
                       borderBlue: _borderBlue,
                     ),
+
                     const SizedBox(height: 18),
-                    const Text(
-                      'Password',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+
+                    const Text('Password'),
                     const SizedBox(height: 8),
+
                     _StyledTextField(
-                      hintText: '',
+                      controller: passwordController,
                       borderBlue: _borderBlue,
                       obscureText: true,
                     ),
+
                     const SizedBox(height: 24),
+
+                    // 🔵 Login Button
                     Center(
                       child: SizedBox(
                         width: 150,
                         height: 42,
                         child: ElevatedButton(
-                          onPressed: () {},
+                          onPressed: _isLoading ? null : loginUser,
                           style: ElevatedButton.styleFrom(
                             elevation: 0,
                             backgroundColor: _primaryBlue,
@@ -104,17 +196,29 @@ class LoginScreen extends StatelessWidget {
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
-                          child: const Text(
-                            'Login',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                          child: _isLoading
+                              ? const SizedBox(
+                                  height: 18,
+                                  width: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text(
+                                  'Login',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                         ),
                       ),
                     ),
+
                     const SizedBox(height: 18),
+
+                    // 🔗 Signup Link
                     Center(
                       child: RichText(
                         text: TextSpan(
@@ -142,6 +246,7 @@ class LoginScreen extends StatelessWidget {
                   ],
                 ),
               ),
+
               const SizedBox(height: 24),
             ],
           ),
@@ -151,28 +256,27 @@ class LoginScreen extends StatelessWidget {
   }
 }
 
+// ✅ TextField Widget
 class _StyledTextField extends StatelessWidget {
   const _StyledTextField({
-    required this.hintText,
+    required this.controller,
     required this.borderBlue,
     this.obscureText = false,
   });
 
-  final String hintText;
+  final TextEditingController controller;
   final Color borderBlue;
   final bool obscureText;
 
   @override
   Widget build(BuildContext context) {
     return TextField(
+      controller: controller,
       obscureText: obscureText,
       decoration: InputDecoration(
-        hintText: hintText,
         isDense: true,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 14,
-        ),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         filled: true,
         fillColor: Colors.white,
         enabledBorder: OutlineInputBorder(
