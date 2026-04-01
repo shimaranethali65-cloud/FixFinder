@@ -7,7 +7,7 @@ import 'screens/loginscreen.dart';
 import 'screens/signupscreen.dart';
 import 'screens/homescreencustomer.dart';
 import 'screens/homescreenworker.dart';
-
+import 'screens/createjobscreen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -33,7 +33,8 @@ class FixFinderApp extends StatelessWidget {
         '/login': (context) => LoginScreen(),
         '/signup': (context) => SignUpScreen(),
         '/home': (context) => HomeScreenCustomer(),
-        '/workerHome': (context) => HomeScreenWorker(), // create later
+        '/workerHome': (context) => HomeScreenWorker(),
+        '/createJob': (context) => CreateJobScreen(),
       },
     );
   }
