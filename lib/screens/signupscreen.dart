@@ -55,15 +55,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
         password: passwordController.text.trim(),
       );
 
-      String uid = userCredential.user!.uid;
-
-      // 📦 Save to Firestore
-      await FirebaseFirestore.instance.collection("users").doc(uid).set({
-        "name": nameController.text.trim(),
-        "email": emailController.text.trim(),
-        "role": _selectedRole,
-        "createdAt": FieldValue.serverTimestamp(),
-      });
+      final user = credential.user;
+      if (user != null) {
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+          'name': nameController.text.trim(),
+          'email': emailController.text.trim(),
+          'role': _selectedRole,
+          'jobsCompleted': 0,
+          'rating': 0.0,
+          'reviewsCount': 0,
+          'isVerified': false,
+          'isPro': false,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
 
       if (!mounted) return;
 

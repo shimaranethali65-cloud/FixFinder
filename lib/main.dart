@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 // Import your screens
-import 'screens/splashscreen.dart';
-import 'screens/loginscreen.dart';
 import 'screens/signupscreen.dart';
+import 'screens/profilescreen.dart';
+import 'screens/editprofilescreen.dart';
+
 import 'screens/homescreencustomer.dart';
 import 'screens/homescreenworker.dart';
 import 'screens/createjobscreen.dart';
@@ -26,15 +27,19 @@ class FixFinderApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'FixFinder',
 
-      initialRoute: '/',
+      // Change this to '/profile' to see your work immediately!
+      initialRoute: '/signup',
 
       routes: {
-        '/': (context) => SplashScreen(),
-        '/login': (context) => LoginScreen(),
         '/signup': (context) => SignUpScreen(),
+ 
+        '/profile': (context) => ProfileScreen(),
+        '/editProfile': (context) => EditProfileScreen(),
+
         '/home': (context) => HomeScreenCustomer(),
         '/workerHome': (context) => HomeScreenWorker(),
         '/createJob': (context) => CreateJobScreen(),
+
       },
     );
   }
