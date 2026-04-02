@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+// ✅ IMPORT YOUR HOME SCREENS
+import 'homescreencustomer.dart';
+import 'homescreenworker.dart';
+
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
 
@@ -15,18 +19,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final Color _borderBlue = const Color(0xFF6C9BFF);
 
   String _selectedRole = 'Customer';
+  bool _isLoading = false;
 
-  // ✅ Controllers
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
 
-  // ✅ Firebase Signup Function
+  // 🔐 SIGNUP FUNCTION
   Future<void> signUpUser() async {
     if (emailController.text.isEmpty ||
         passwordController.text.isEmpty ||
-        nameController.text.isEmpty) {
+        nameController.text.isEmpty ||
+        confirmPasswordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please fill all fields")),
       );
@@ -40,8 +45,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
       return;
     }
 
+    setState(() => _isLoading = true);
+
     try {
-      final credential =
+      // 🔐 Create user
+      final userCredential =
           await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
@@ -68,16 +76,47 @@ class _SignUpScreenState extends State<SignUpScreen> {
         const SnackBar(content: Text("Signup Successful")),
       );
 
-      if (_selectedRole == 'Customer') {
-        Navigator.pushReplacementNamed(context, '/home');
+      // ✅ ROLE-BASED NAVIGATION
+      if (_selectedRole == "Customer") {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => HomeScreenCustomer()),
+        );
       } else {
-        Navigator.pushReplacementNamed(context, '/workerHome'); // future screen
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => HomeScreenWorker()),
+        );
       }
+
     } on FirebaseAuthException catch (e) {
+      String message = "Signup Failed";
+
+      if (e.code == 'email-already-in-use') {
+        message = "Email already exists";
+      } else if (e.code == 'weak-password') {
+        message = "Password must be at least 6 characters";
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message ?? "Signup Failed")),
+        SnackBar(content: Text(message)),
       );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Something went wrong")),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
+    super.dispose();
   }
 
   @override
@@ -137,7 +176,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                     ],
                   ),
-
                   child: Stack(
                     children: [
                       Positioned(
@@ -161,7 +199,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // NAME
                           const Text('Name'),
                           const SizedBox(height: 6),
                           _StyledTextField(
@@ -171,7 +208,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                           const SizedBox(height: 10),
 
-                          // EMAIL
                           const Text('Email'),
                           const SizedBox(height: 6),
                           _StyledTextField(
@@ -181,7 +217,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                           const SizedBox(height: 10),
 
-                          // PASSWORD
                           const Text('Password'),
                           const SizedBox(height: 6),
                           _StyledTextField(
@@ -192,7 +227,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                           const SizedBox(height: 10),
 
-                          // CONFIRM PASSWORD
                           const Text('Confirm Password'),
                           const SizedBox(height: 6),
                           _StyledTextField(
@@ -203,17 +237,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                           const SizedBox(height: 14),
 
-                          // ROLE
                           const Text('Select Role'),
-                          const SizedBox(height: 4),
 
                           _RoleOption(
                             label: 'Customer',
                             value: _selectedRole == 'Customer',
                             onChanged: () {
-                              setState(() {
-                                _selectedRole = 'Customer';
-                              });
+                              setState(() => _selectedRole = 'Customer');
                             },
                           ),
 
@@ -221,35 +251,40 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             label: 'Worker',
                             value: _selectedRole == 'Worker',
                             onChanged: () {
-                              setState(() {
-                                _selectedRole = 'Worker';
-                              });
+                              setState(() => _selectedRole = 'Worker');
                             },
                           ),
 
                           const SizedBox(height: 14),
 
-                          // BUTTON
                           Center(
                             child: SizedBox(
                               width: 150,
                               height: 40,
                               child: ElevatedButton(
-                                onPressed: signUpUser,
+                                onPressed: _isLoading ? null : signUpUser,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: _primaryBlue,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                 ),
-                                child: const Text('Sign Up'),
+                                child: _isLoading
+                                    ? const SizedBox(
+                                        height: 18,
+                                        width: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Text('Sign Up'),
                               ),
                             ),
                           ),
 
                           const SizedBox(height: 10),
 
-                          // LOGIN LINK
                           Center(
                             child: RichText(
                               text: TextSpan(
@@ -343,8 +378,9 @@ class _RoleOption extends StatelessWidget {
       onTap: onChanged,
       child: Row(
         children: [
-          Checkbox(
-            value: value,
+          Radio<bool>(
+            value: true,
+            groupValue: value,
             onChanged: (_) => onChanged(),
             activeColor: const Color(0xFF3D7BE0),
           ),
