@@ -9,6 +9,7 @@ class CreateJobScreen extends StatefulWidget {
 
 class _CreateJobScreenState extends State<CreateJobScreen> {
   String selectedJob = "Plumber";
+  bool isDropdownOpen = false;
 
   final List<String> jobs = [
     "Plumber",
@@ -23,166 +24,199 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
     "Mason",
   ];
 
-  final descriptionController = TextEditingController();
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-
-    final selectedService =
-        ModalRoute.of(context)!.settings.arguments as String?;
-
-    if (selectedService != null) {
-      selectedJob = selectedService;
-    }
-  }
+  final TextEditingController descriptionController =
+      TextEditingController();
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+    return GestureDetector(
+      onTap: () {
+        // Close dropdown when tapping outside
+        setState(() {
+          isDropdownOpen = false;
+        });
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF5F5F5),
 
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18),
-          child: SingleChildScrollView(
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
 
-                // 🔙 Back
-                IconButton(
-                  padding: EdgeInsets.zero,
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () => Navigator.pop(context),
+                // 🔙 BACK + TITLE
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.arrow_back),
+                    ),
+                    const Expanded(
+                      child: Text(
+                        "Create Job",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 40),
+                  ],
                 ),
 
                 const SizedBox(height: 10),
 
-                // Title
-                const Center(
-                  child: Text(
-                    "Create Job",
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w600,
+                // 🔹 JOB TITLE
+                const Text(
+                  "Job Title",
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      isDropdownOpen = !isDropdownOpen;
+                    });
+                  },
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.blue),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(selectedJob),
+                        const Icon(Icons.keyboard_arrow_down),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // 🔥 CUSTOM DROPDOWN
+                if (isDropdownOpen)
+                  Container(
+                    margin: const EdgeInsets.only(top: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.black12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: jobs.map((job) {
+                        final isSelected = job == selectedJob;
+
+                        return InkWell(
+                          onTap: () {
+                            setState(() {
+                              selectedJob = job;
+                              isDropdownOpen = false;
+                            });
+                          },
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 14),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? Colors.grey.withOpacity(0.2)
+                                  : Colors.transparent,
+                              border: const Border(
+                                bottom:
+                                    BorderSide(color: Colors.black12),
+                              ),
+                            ),
+                            child: Text(
+                              job,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+
+                const SizedBox(height: 20),
+
+                // 🔹 DESCRIPTION
+                const Text(
+                  "Description",
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+
+                TextField(
+                  controller: descriptionController,
+                  maxLines: 4,
+                  decoration: InputDecoration(
+                    hintText: "Type here ...",
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.blue),
                     ),
                   ),
                 ),
 
                 const SizedBox(height: 20),
 
-                // Job Title
+                // 📍 LOCATION
                 const Text(
-                  "Job Title",
-                  style: TextStyle(fontSize: 15),
+                  "Current Location 📍",
+                  style: TextStyle(fontWeight: FontWeight.w600),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
 
-                DropdownButtonFormField<String>(
-                  value: selectedJob,
-                  items: jobs.map((job) {
-                    return DropdownMenuItem(
-                      value: job,
-                      child: Text(job),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      selectedJob = value!;
-                    });
-                  },
-                  decoration: InputDecoration(
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: Colors.blue),
-                    ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.blue),
                   ),
+                  child: const Text("Location fetched"),
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
 
-                // Description
-                const Text(
-                  "Description",
-                  style: TextStyle(fontSize: 15),
-                ),
-                const SizedBox(height: 6),
-
-                TextField(
-                  controller: descriptionController,
-                  maxLines: 4,
-                  decoration: InputDecoration(
-                    hintText: "Type here ....",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Colors.blue),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Location
-                const Row(
-                  children: [
-                    Text(
-                      "Current Location",
-                      style: TextStyle(fontSize: 15),
-                    ),
-                    SizedBox(width: 4),
-                    Icon(Icons.location_pin, color: Colors.red, size: 16),
-                  ],
-                ),
-
-                const SizedBox(height: 6),
-
-                TextField(
-                  readOnly: true,
-                  decoration: InputDecoration(
-                    hintText: "Location fetched",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: Colors.blue),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Map Image
+                // 🗺️ MAP IMAGE
                 Center(
                   child: Image.asset(
-                    'assets/images/map.png', // 🔥 add this image
-                    height: 160,
-                    fit: BoxFit.cover,
+                    "assets/images/map.png",
+                    height: 120,
                   ),
                 ),
 
-                const SizedBox(height: 30),
+                const Spacer(),
 
-                // Button
+                // 🔵 BUTTON
                 Center(
                   child: SizedBox(
                     width: 200,
                     height: 45,
                     child: ElevatedButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Job Posted")),
-                        );
-                      },
+                      onPressed: () {},
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
                         shape: RoundedRectangleBorder(
@@ -191,13 +225,13 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                       ),
                       child: const Text(
                         "Post Appeal",
-                        style: TextStyle(fontSize: 16),
+                        style: TextStyle(fontSize: 15),
                       ),
                     ),
                   ),
                 ),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 20),
               ],
             ),
           ),
