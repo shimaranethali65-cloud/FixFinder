@@ -1,4 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // ✅ NEW
+
+import '../constants/app_colors.dart';
+import 'jobdetailsscreen.dart';
 
 class CreateJobScreen extends StatefulWidget {
   const CreateJobScreen({super.key});
@@ -9,7 +19,14 @@ class CreateJobScreen extends StatefulWidget {
 
 class _CreateJobScreenState extends State<CreateJobScreen> {
   String selectedJob = "Plumber";
-  bool isDropdownOpen = false;
+
+  LatLng? currentLatLng;
+  String locationText = "Fetching location...";
+
+  StreamSubscription<Position>? positionStream;
+
+  final TextEditingController descriptionController =
+      TextEditingController();
 
   final List<String> jobs = [
     "Plumber",
@@ -24,30 +41,153 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
     "Mason",
   ];
 
-  final TextEditingController descriptionController =
-      TextEditingController();
+  @override
+  void initState() {
+    super.initState();
+    _startLocationUpdates();
+  }
+
+  // 📍 ADDRESS
+  Future<String> getAddressFromLatLng(double lat, double lng) async {
+    try {
+      List<Placemark> placemarks =
+          await placemarkFromCoordinates(lat, lng);
+
+      Placemark place = placemarks[0];
+
+      List<String?> parts = [
+        place.street,
+        place.subLocality,
+        place.locality,
+        place.administrativeArea,
+        place.country,
+      ];
+
+      parts.removeWhere((p) => p == null || p!.isEmpty);
+
+      return parts.join(", ");
+    } catch (e) {
+      return "Location not found";
+    }
+  }
+
+  // 📍 LOCATION STREAM
+  void _startLocationUpdates() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      setState(() => locationText = "Location service disabled");
+      return;
+    }
+
+    LocationPermission permission =
+        await Geolocator.checkPermission();
+
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    positionStream = Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 10,
+      ),
+    ).listen((Position position) async {
+      LatLng newLatLng =
+          LatLng(position.latitude, position.longitude);
+
+      String address = await getAddressFromLatLng(
+          position.latitude, position.longitude);
+
+      setState(() {
+        currentLatLng = newLatLng;
+        locationText = address;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    positionStream?.cancel();
+    descriptionController.dispose();
+    super.dispose();
+  }
+
+  // 📌 JOB SELECTOR
+  void _openJobSelector() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          children: jobs.map((job) {
+            return ListTile(
+              title: Text(job),
+              trailing: job == selectedJob
+                  ? const Icon(Icons.check, color: Colors.blue)
+                  : null,
+              onTap: () {
+                setState(() => selectedJob = job);
+                Navigator.pop(context);
+              },
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+
+  // 🔥 SAVE JOB TO FIREBASE
+  Future<void> _postJob() async {
+    if (descriptionController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter description")),
+      );
+      return;
+    }
+
+    String jobId =
+        DateTime.now().millisecondsSinceEpoch.toString();
+
+    await FirebaseFirestore.instance
+        .collection('jobs')
+        .doc(jobId)
+        .set({
+      'jobId': jobId,
+      'category': selectedJob,
+      'description': descriptionController.text,
+      'location': locationText,
+      'status': 'waiting',
+      'createdAt': Timestamp.now(),
+    });
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => JobDetailsScreen(
+          category: selectedJob,
+          description: descriptionController.text,
+          location: locationText,
+          jobId: jobId, // ✅ FIXED
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        // Close dropdown when tapping outside
-        setState(() {
-          isDropdownOpen = false;
-        });
-      },
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF5F5F5),
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
 
-        body: SafeArea(
+      body: SafeArea(
+        child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.all(16),
 
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
 
-                // 🔙 BACK + TITLE
+                // 🔙 HEADER
                 Row(
                   children: [
                     IconButton(
@@ -68,31 +208,24 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                   ],
                 ),
 
-                const SizedBox(height: 10),
+                const SizedBox(height: 20),
 
-                // 🔹 JOB TITLE
-                const Text(
-                  "Job Title",
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
+                // JOB TITLE
+                const Text("Job Title"),
                 const SizedBox(height: 8),
 
                 GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      isDropdownOpen = !isDropdownOpen;
-                    });
-                  },
+                  onTap: _openJobSelector,
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                    padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.blue),
                     ),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment:
+                          MainAxisAlignment.spaceBetween,
                       children: [
                         Text(selectedJob),
                         const Icon(Icons.keyboard_arrow_down),
@@ -101,137 +234,104 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                   ),
                 ),
 
-                // 🔥 CUSTOM DROPDOWN
-                if (isDropdownOpen)
-                  Container(
-                    margin: const EdgeInsets.only(top: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.black12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 8,
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: jobs.map((job) {
-                        final isSelected = job == selectedJob;
-
-                        return InkWell(
-                          onTap: () {
-                            setState(() {
-                              selectedJob = job;
-                              isDropdownOpen = false;
-                            });
-                          },
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? Colors.grey.withOpacity(0.2)
-                                  : Colors.transparent,
-                              border: const Border(
-                                bottom:
-                                    BorderSide(color: Colors.black12),
-                              ),
-                            ),
-                            child: Text(
-                              job,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: isSelected
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-
                 const SizedBox(height: 20),
 
-                // 🔹 DESCRIPTION
-                const Text(
-                  "Description",
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
+                // DESCRIPTION
+                const Text("Description"),
                 const SizedBox(height: 8),
 
                 TextField(
                   controller: descriptionController,
                   maxLines: 4,
                   decoration: InputDecoration(
-                    hintText: "Type here ...",
+                    hintText: "Type here...",
                     filled: true,
                     fillColor: Colors.white,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.blue),
                     ),
                   ),
                 ),
 
                 const SizedBox(height: 20),
 
-                // 📍 LOCATION
-                const Text(
-                  "Current Location 📍",
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
+                // LOCATION
+                const Text("Current Location"),
                 const SizedBox(height: 8),
 
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 14),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: Colors.blue),
                   ),
-                  child: const Text("Location fetched"),
+                  child: Text(locationText),
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
 
-                // 🗺️ MAP IMAGE
-                Center(
-                  child: Image.asset(
-                    "assets/images/map.png",
-                    height: 120,
-                  ),
-                ),
-
-                const Spacer(),
-
-                // 🔵 BUTTON
-                Center(
-                  child: SizedBox(
-                    width: 200,
-                    height: 45,
-                    child: ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                // MAP
+                currentLatLng != null
+                    ? SizedBox(
+                        height: 200,
+                        child: FlutterMap(
+                          options: MapOptions(
+                            initialCenter: currentLatLng!,
+                            initialZoom: 15,
+                          ),
+                          children: [
+                            TileLayer(
+                              urlTemplate:
+                                  "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                              userAgentPackageName:
+                                  'com.example.fixfinder',
+                            ),
+                            MarkerLayer(
+                              markers: [
+                                Marker(
+                                  point: currentLatLng!,
+                                  width: 40,
+                                  height: 40,
+                                  child: const Icon(
+                                    Icons.location_pin,
+                                    color: Colors.red,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                      ),
-                      child: const Text(
-                        "Post Appeal",
-                        style: TextStyle(fontSize: 15),
-                      ),
-                    ),
-                  ),
-                ),
+                      )
+                    : const Center(child: CircularProgressIndicator()),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 30),
+
+                // 🔵 POST BUTTON
+                Center(
+  child: SizedBox(
+    width: 200,
+    height: 45,
+    child: ElevatedButton(
+      onPressed: _postJob,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.primaryBlue,
+        foregroundColor: Colors.white, 
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(6), 
+        ),
+      ),
+      child: const Text(
+        "Post Appeal",
+        style: TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+          color: Colors.white, 
+        ),
+      ),
+    ),
+  ),
+),
               ],
             ),
           ),

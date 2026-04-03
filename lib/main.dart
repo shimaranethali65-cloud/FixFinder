@@ -5,10 +5,13 @@ import 'package:firebase_core/firebase_core.dart';
 import 'screens/signupscreen.dart';
 import 'screens/profilescreen.dart';
 import 'screens/editprofilescreen.dart';
-
+import 'screens/loginscreen.dart';
 import 'screens/homescreencustomer.dart';
 import 'screens/homescreenworker.dart';
 import 'screens/createjobscreen.dart';
+
+// ❌ DO NOT add viewbidsscreen here in routes
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -21,25 +24,28 @@ void main() async {
 }
 
 class FixFinderApp extends StatelessWidget {
+  const FixFinderApp({super.key}); // ✅ added const constructor
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'FixFinder',
 
-      // Change this to '/profile' to see your work immediately!
       initialRoute: '/signup',
 
       routes: {
-        '/signup': (context) => SignUpScreen(),
- 
-        '/profile': (context) => ProfileScreen(),
-        '/editProfile': (context) => EditProfileScreen(),
+        '/signup': (context) => const SignUpScreen(),
+        '/login': (context) => const LoginScreen(),
 
-        '/home': (context) => HomeScreenCustomer(),
-        '/workerHome': (context) => HomeScreenWorker(),
-        '/createJob': (context) => CreateJobScreen(),
+        '/profile': (context) => const ProfileScreen(),
+        '/editProfile': (context) => const EditProfileScreen(),
 
+        '/home': (context) => const HomeScreenCustomer(),
+        '/workerHome': (context) =>  HomeScreenWorker(),
+
+        '/createJob': (context) => const CreateJobScreen(),
+      
       },
     );
   }
