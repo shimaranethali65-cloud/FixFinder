@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 // Import your screens
+import 'screens/splashscreen.dart';
 import 'screens/signupscreen.dart';
 import 'screens/profilescreen.dart';
 import 'screens/editprofilescreen.dart';
@@ -32,9 +33,10 @@ class FixFinderApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'FixFinder',
 
-      initialRoute: '/signup',
+      initialRoute: '/',
 
       routes: {
+        '/': (context) => SplashScreen(),
         '/signup': (context) => const SignUpScreen(),
         '/login': (context) => const LoginScreen(),
 
