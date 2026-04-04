@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(const MyApp());
 }
 
@@ -11,6 +15,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Worker Home',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.blue),
       home: const HomeScreenWorker(),
     );
@@ -20,7 +25,7 @@ class MyApp extends StatelessWidget {
 class HomeScreenWorker extends StatelessWidget {
   const HomeScreenWorker({super.key});
 
-  // Sample customer posts
+  // ✅ YOUR SAMPLE DATA (kept)
   final List<Map<String, String>> customerPosts = const [
     {"title": "Fix leaking pipe", "customer": "John Doe"},
     {"title": "Repair broken water pipe", "customer": "Alice Smith"},
@@ -37,7 +42,6 @@ class HomeScreenWorker extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            // Simulate going back to login (replace with real login later)
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -45,6 +49,7 @@ class HomeScreenWorker extends StatelessWidget {
           },
         ),
       ),
+
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -55,17 +60,54 @@ class HomeScreenWorker extends StatelessWidget {
                 SizedBox(width: 8),
                 Text(
                   "Nearby Jobs",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
+
             const SizedBox(height: 20),
+
             Expanded(
-              child: ListView.builder(
-                itemCount: customerPosts.length,
-                itemBuilder: (context, index) {
-                  final post = customerPosts[index];
-                  return jobCard(context, post["title"]!, post["customer"]!);
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('jobs')
+                    .snapshots(),
+                builder: (context, snapshot) {
+
+                  // 🔥 If Firebase loading
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  // 🔥 If Firebase has data → use it
+                  if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+                    final jobs = snapshot.data!.docs;
+
+                    return ListView.builder(
+                      itemCount: jobs.length,
+                      itemBuilder: (context, index) {
+                        var job = jobs[index];
+
+                        String title = job['title'];
+                        String customer = job['customer'];
+
+                        return jobCard(context, title, customer);
+                      },
+                    );
+                  }
+
+                  // 🔥 If NO Firebase data → use SAMPLE DATA
+                  return ListView.builder(
+                    itemCount: customerPosts.length,
+                    itemBuilder: (context, index) {
+                      final post = customerPosts[index];
+                      return jobCard(
+                          context, post["title"]!, post["customer"]!);
+                    },
+                  );
                 },
               ),
             ),
@@ -79,19 +121,24 @@ class HomeScreenWorker extends StatelessWidget {
     return Card(
       elevation: 3,
       margin: const EdgeInsets.only(bottom: 15),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+
       child: ListTile(
         title: Text(
           title,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: const TextStyle(fontWeight: FontWeight.bold), // ✅ bold
         ),
+
         subtitle: Text("Customer: $customer"),
+
         trailing: ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.lightBlue, // Light blue button
+            backgroundColor: Colors.lightBlue, // ✅ light blue
           ),
+
           onPressed: () {
-            // Open job details
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -102,6 +149,7 @@ class HomeScreenWorker extends StatelessWidget {
               ),
             );
           },
+
           child: const Text("View"),
         ),
       ),
@@ -109,7 +157,7 @@ class HomeScreenWorker extends StatelessWidget {
   }
 }
 
-// Dummy login screen for back button
+// 🔥 Login Screen
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
 
@@ -124,7 +172,7 @@ class LoginScreen extends StatelessWidget {
   }
 }
 
-// Job details screen
+// 🔥 Job Details Screen
 class JobDetailsScreen extends StatelessWidget {
   final String jobTitle;
   final String customerName;
@@ -140,22 +188,17 @@ class JobDetailsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text("Job Details")),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               jobTitle,
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                  fontSize: 22, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
             Text("Customer: $customerName"),
-            const SizedBox(height: 20),
-            const Text(
-              "Job Description:",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const Text("Here you can add detailed job description..."),
           ],
         ),
       ),
