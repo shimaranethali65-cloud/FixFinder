@@ -8,102 +8,86 @@ class ProfileScreenCustomer extends StatefulWidget {
 }
 
 class _ProfileScreenCustomerState extends State<ProfileScreenCustomer> {
-
-  final TextEditingController nameController =
-      TextEditingController(text: "John Smith");
-
-  final TextEditingController emailController =
-      TextEditingController(text: "john@gmail.com");
-
-  final TextEditingController phoneController =
-      TextEditingController(text: "0774384959");
-
-  final TextEditingController currentPasswordController =
-      TextEditingController();
-
-  final TextEditingController newPasswordController =
-      TextEditingController();
+  final nameController = TextEditingController(text: "John Smith");
+  final emailController = TextEditingController(text: "john@gmail.com");
+  final phoneController = TextEditingController(text: "0771234567");
+  final currentPasswordController = TextEditingController();
+  final newPasswordController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("My Profile"),
-        leading: const Icon(Icons.arrow_back),
-      ),
-      body: Padding(
+      backgroundColor: Colors.white,
+      appBar: AppBar(title: const Text("My Profile"), centerTitle: true),
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
+        child: Column(
+          children: [
+            const CircleAvatar(
+              radius: 45,
+              backgroundColor: Colors.blue,
+              child: Icon(Icons.person, size: 50, color: Colors.white),
+            ),
 
-              const CircleAvatar(
-                radius: 40,
-                child: Icon(Icons.person, size: 40),
-              ),
+            const SizedBox(height: 10),
 
-              const SizedBox(height: 10),
+            Text(
+              nameController.text,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
 
-              Text(
-                nameController.text,
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
+            const SizedBox(height: 25),
 
-              const SizedBox(height: 20),
+            buildTextField("Email", emailController),
+            buildTextField("Phone", phoneController),
+            buildTextField("Current Password", currentPasswordController, true),
+            buildTextField("New Password", newPasswordController, true),
 
-              TextField(
-                controller: emailController,
-                decoration: const InputDecoration(labelText: "Email"),
-              ),
+            const SizedBox(height: 25),
 
-              TextField(
-                controller: phoneController,
-                decoration: const InputDecoration(labelText: "Phone"),
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
+                  onPressed: () {},
+                  child: const Text("Edit Profile"),
+                ),
 
-              TextField(
-                controller: currentPasswordController,
-                decoration: const InputDecoration(labelText: "Current Password"),
-                obscureText: true,
-              ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+                  onPressed: saveChanges,
+                  child: const Text("Save Changes"),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-              TextField(
-                controller: newPasswordController,
-                decoration: const InputDecoration(labelText: "New Password"),
-                obscureText: true,
-              ),
-
-              const SizedBox(height: 20),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-
-                  ElevatedButton(
-                    onPressed: () {
-                      print("Edit Profile clicked");
-                    },
-                    child: const Text("Edit Profile"),
-                  ),
-
-                  ElevatedButton(
-                    onPressed: () {
-                      saveChanges();
-                    },
-                    child: const Text("Save Changes"),
-                  ),
-                ],
-              )
-            ],
-          ),
+  Widget buildTextField(
+    String label,
+    TextEditingController controller, [
+    bool isPassword = false,
+  ]) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 15),
+      child: TextField(
+        controller: controller,
+        obscureText: isPassword,
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
         ),
       ),
     );
   }
 
   void saveChanges() {
-    print("Email: ${emailController.text}");
-    print("Phone: ${phoneController.text}");
+    print("Updated Email: ${emailController.text}");
+    print("Updated Phone: ${phoneController.text}");
     print("New Password: ${newPasswordController.text}");
   }
 }
