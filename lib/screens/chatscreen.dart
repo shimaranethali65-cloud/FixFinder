@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'rating_screen.dart';
 
 class ChatScreen extends StatelessWidget {
   const ChatScreen({super.key});
@@ -7,18 +8,22 @@ class ChatScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context); // Previous page ekata yanna
+          },
+        ),
         title: const Text("Chat"),
+        centerTitle: true,
       ),
-
       body: Column(
         children: [
+          const SizedBox(height: 15),
 
-          const SizedBox(height: 20),
-
-          /// Name box
+          // Name box
           Container(
-            padding: const EdgeInsets.all(10),
-            margin: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
             decoration: BoxDecoration(
               color: Colors.blue,
               borderRadius: BorderRadius.circular(10),
@@ -31,46 +36,67 @@ class ChatScreen extends StatelessWidget {
 
           const SizedBox(height: 20),
 
-          /// Message from worker
-          Container(
-            margin: const EdgeInsets.only(left: 20, bottom: 10),
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(10),
+          // Messages list with scroll support
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              children: const [
+                // Incoming message
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: 10),
+                    child: Text("I can come in 30 minutes"),
+                  ),
+                ),
+                // Outgoing message
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: 10),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: Colors.grey,
+                        borderRadius: BorderRadius.all(Radius.circular(10)),
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.all(10),
+                        child: Text("Okay come fast"),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            child: const Text("I can come in 30 minutes"),
           ),
 
-          /// Message from customer
-          Align(
-            alignment: Alignment.centerRight,
-            child: Container(
-              margin: const EdgeInsets.only(right: 20, bottom: 10),
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Text("Okay come fast"),
-            ),
-          ),
-
-          const Spacer(),
-
-          /// Input field
+          // Input box
           Padding(
             padding: const EdgeInsets.all(10),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: "Type here...",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
+            child: Row(
+              children: [
+                const Expanded(
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: "Type here...",
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
                 ),
-                suffixIcon: const Icon(Icons.send),
-              ),
+                IconButton(
+                  icon: const Icon(Icons.send),
+                  onPressed: () {
+                    // Navigate to Rating Screen
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const RatingScreen()),
+                    );
+                  },
+                )
+              ],
             ),
-          ),
+          )
         ],
       ),
     );
