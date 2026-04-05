@@ -5,7 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 // ✅ IMPORT YOUR HOME SCREENS
 import 'homescreencustomer.dart';
-import 'homescreenworker.dart';
+import 'workernavbar.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -32,16 +32,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
         passwordController.text.isEmpty ||
         nameController.text.isEmpty ||
         confirmPasswordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please fill all fields")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Please fill all fields")));
       return;
     }
 
     if (passwordController.text != confirmPasswordController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Passwords do not match")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Passwords do not match")));
       return;
     }
 
@@ -49,11 +49,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     try {
       // 🔐 Create user
-      final userCredential =
-          await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text.trim(),
-      );
+      final userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
+            email: emailController.text.trim(),
+            password: passwordController.text.trim(),
+          );
 
       String uid = userCredential.user!.uid;
 
@@ -67,9 +67,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Signup Successful")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Signup Successful")));
 
       // ✅ ROLE-BASED NAVIGATION
       if (_selectedRole == "Customer") {
@@ -80,10 +80,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
       } else {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => HomeScreenWorker()),
+          MaterialPageRoute(builder: (_) => const WorkerNavBar()),
         );
       }
-
     } on FirebaseAuthException catch (e) {
       String message = "Signup Failed";
 
@@ -93,13 +92,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
         message = "Password must be at least 6 characters";
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Something went wrong")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Something went wrong")));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -137,20 +136,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
               const Center(
                 child: Text(
                   'Create an Account',
-                  style: TextStyle(
-                    fontSize: 19,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
                 ),
               ),
 
               const SizedBox(height: 10),
 
               Center(
-                child: Image.asset(
-                  'assets/images/SignUp.png',
-                  height: 96,
-                ),
+                child: Image.asset('assets/images/SignUp.png', height: 96),
               ),
 
               const SizedBox(height: 12),
@@ -260,7 +253,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 onPressed: _isLoading ? null : signUpUser,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: _primaryBlue,
-                                   foregroundColor: Colors.white,
+                                  foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10),
                                   ),
@@ -336,13 +329,13 @@ class _StyledTextField extends StatelessWidget {
       controller: controller,
       obscureText: obscureText,
       decoration: InputDecoration(
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
         filled: true,
         fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: borderBlue),

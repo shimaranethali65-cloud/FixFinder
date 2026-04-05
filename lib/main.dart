@@ -8,7 +8,7 @@ import 'screens/signupscreen.dart';
 import 'screens/profilescreen.dart';
 import 'screens/editprofilescreen.dart';
 import 'screens/loginscreen.dart';
-import 'screens/homescreenworker.dart';
+import 'screens/workernavbar.dart';
 import 'screens/createjobscreen.dart';
 import 'screens/myjobsscreen.dart';
 
@@ -58,7 +58,7 @@ class FixFinderApp extends StatelessWidget {
           );
         },
 
-        '/workerHome': (context) => HomeScreenWorker(),
+        '/workerHome': (context) => const WorkerNavBar(),
 
         '/createJob': (context) => const CreateJobScreen(),
       },
