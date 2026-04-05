@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import 'viewbidsscreen.dart';
+import 'myjobsscreen.dart';
 
 class JobDetailsScreen extends StatelessWidget {
   final String category;
   final String description;
   final String location;
-  final String jobId; // ✅ NEW
+  final String jobId;
 
   const JobDetailsScreen({
     super.key,
     required this.category,
     required this.description,
     required this.location,
-    required this.jobId, // ✅ NEW
+    required this.jobId,
   });
 
   @override
@@ -25,10 +26,8 @@ class JobDetailsScreen extends StatelessWidget {
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(16),
-
             child: Column(
               children: [
-
                 // 🔙 HEADER
                 Row(
                   children: [
@@ -57,17 +56,17 @@ class JobDetailsScreen extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 40),
+                const SizedBox(height: 30),
 
                 // 🖼️ IMAGE
                 Center(
                   child: Image.asset(
-                    "assets/images/postsuccesful.png",
-                    height: 200,
+                    "assets/images/postsuccesful.png", 
+                    height: 180,
                   ),
                 ),
 
-                const SizedBox(height: 80),
+                const SizedBox(height: 60),
 
                 // 📦 DETAILS BOX
                 Container(
@@ -78,11 +77,9 @@ class JobDetailsScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                     color: Colors.white,
                   ),
-
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-
                       Text("Category : $category"),
                       const SizedBox(height: 8),
 
@@ -93,12 +90,10 @@ class JobDetailsScreen extends StatelessWidget {
                       const SizedBox(height: 8),
 
                       const Text("Status : Waiting for bids"),
-
                       const SizedBox(height: 20),
 
                       Row(
                         children: [
-
                           // Cancel
                           Expanded(
                             child: OutlinedButton(
@@ -111,7 +106,7 @@ class JobDetailsScreen extends StatelessWidget {
 
                           const SizedBox(width: 10),
 
-                          // ✅ VIEW BIDS WITH JOB ID
+                          // View Bids
                           Expanded(
                             child: ElevatedButton(
                               onPressed: () {
@@ -120,8 +115,8 @@ class JobDetailsScreen extends StatelessWidget {
                                   MaterialPageRoute(
                                     builder: (context) =>
                                         ViewBidsScreen(
-                                          jobId: jobId, // ✅ PASS HERE
-                                        ),
+                                      jobId: jobId,
+                                    ),
                                   ),
                                 );
                               },
@@ -141,6 +136,38 @@ class JobDetailsScreen extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
+          ),
+        ),
+      ),
+
+      // ✅ FIXED: PROPER PLACE
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(16),
+        child: SizedBox(
+          height: 50,
+          child: ElevatedButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const MyJobsScreen(),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryBlue,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text(
+              "Go to My Jobs",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ),
