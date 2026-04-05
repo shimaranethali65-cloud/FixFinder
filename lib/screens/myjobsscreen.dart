@@ -6,10 +6,10 @@ class MyJobsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const jobs = <String>[
-      'Fix sink',
-      'Fix leaking shower',
-      'Repair Toilet Plush',
-      'Fix Pipe Joint Leak',
+      'Installed new kitchen sink',
+      'Repaired leaking shower head',
+      'Fixed toilet flush system',
+      'Sealed pipe joint leak',
     ];
 
     return Scaffold(
@@ -38,7 +38,7 @@ class MyJobsScreen extends StatelessWidget {
                   _GradientIconCircle(),
                   SizedBox(width: 12),
                   Text(
-                    'Completed Jobs',
+                    'Jobs You Completed',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                   ),
                 ],
