@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import 'viewbidsscreen.dart';
-import 'myjobsscreen.dart';
+import 'ratingscreen.dart';
 
 class JobDetailsScreen extends StatelessWidget {
   final String category;
@@ -151,7 +151,7 @@ class JobDetailsScreen extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const MyJobsScreen(),
+                  builder: (context) => const RatingScreen(),
                 ),
               );
             },
@@ -162,7 +162,7 @@ class JobDetailsScreen extends StatelessWidget {
               ),
             ),
             child: const Text(
-              "Go to My Jobs",
+              "Mark as Completed",
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 16,

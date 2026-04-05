@@ -11,7 +11,7 @@ class ChatScreen extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            Navigator.pop(context); // Previous page ekata yanna
+            Navigator.pop(context); 
           },
         ),
         title: const Text("Chat"),
