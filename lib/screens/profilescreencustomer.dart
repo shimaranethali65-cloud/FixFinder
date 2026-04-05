@@ -1,148 +1,221 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ProfileScreenCustomer extends StatefulWidget {
   const ProfileScreenCustomer({super.key});
 
   @override
-  State<ProfileScreenCustomer> createState() => _ProfileScreenCustomerState();
+  State<ProfileScreenCustomer> createState() =>
+      _ProfileScreenCustomerState();
 }
 
-class _ProfileScreenCustomerState extends State<ProfileScreenCustomer> {
+class _ProfileScreenCustomerState
+    extends State<ProfileScreenCustomer> {
+
+  final user = FirebaseAuth.instance.currentUser;
+
   final nameController = TextEditingController();
   final emailController = TextEditingController();
-  final phoneController = TextEditingController();
   final currentPasswordController = TextEditingController();
   final newPasswordController = TextEditingController();
 
-  User? _user;
-  Stream<DocumentSnapshot<Map<String, dynamic>>>? _profileStream;
+  bool isLoading = true;
+  bool isEditing = false; // 🔥 NEW
 
   @override
   void initState() {
     super.initState();
-    _user = FirebaseAuth.instance.currentUser;
-    if (_user != null) {
-      _profileStream = FirebaseFirestore.instance
+    loadUserData();
+  }
+
+  /// 🔥 LOAD USER DATA
+  Future<void> loadUserData() async {
+    if (user == null) return;
+
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user!.uid)
+        .get();
+
+    if (doc.exists) {
+      final data = doc.data()!;
+
+      nameController.text = data['name'] ?? '';
+      emailController.text = data['email'] ?? '';
+    }
+
+    setState(() => isLoading = false);
+  }
+
+  /// 🔥 UPDATE PROFILE
+  Future<void> updateProfile() async {
+    if (user == null) return;
+
+    try {
+      await FirebaseFirestore.instance
           .collection('users')
-          .doc(_user!.uid)
-          .snapshots();
+          .doc(user!.uid)
+          .update({
+        'name': nameController.text,
+        'email': emailController.text,
+      });
+
+      await user!.updateEmail(emailController.text);
+
+      if (newPasswordController.text.isNotEmpty) {
+        await user!.updatePassword(newPasswordController.text);
+      }
+
+      setState(() => isEditing = false);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Profile updated successfully")),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
     }
   }
 
   @override
-  void dispose() {
-    nameController.dispose();
-    emailController.dispose();
-    phoneController.dispose();
-    currentPasswordController.dispose();
-    newPasswordController.dispose();
-    super.dispose();
-  }
-
-  void _applyProfileData(Map<String, dynamic>? data) {
-    nameController.text = (data?['name'] as String?)?.trim().isNotEmpty == true
-        ? (data?['name'] as String).trim()
-        : 'Customer';
-    emailController.text =
-        (data?['email'] as String?)?.trim().isNotEmpty == true
-        ? (data?['email'] as String).trim()
-        : (_user?.email ?? '');
-    phoneController.text = (data?['phone'] as String?) ?? '';
-  }
-
-  @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(title: const Text('My Profile'), centerTitle: true),
-      body: _profileStream == null
-          ? _buildProfileBody()
-          : StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-              stream: _profileStream,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+      backgroundColor: const Color(0xFFF5F5F5),
 
-                _applyProfileData(snapshot.data?.data());
-                return _buildProfileBody();
-              },
-            ),
-    );
-  }
-
-  Widget _buildProfileBody() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          const CircleAvatar(
-            radius: 45,
-            backgroundColor: Colors.blue,
-            child: Icon(Icons.person, size: 50, color: Colors.white),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            nameController.text.isEmpty ? 'Customer' : nameController.text,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 25),
-          buildTextField('Email', emailController),
-          buildTextField('Phone', phoneController),
-          buildTextField('Current Password', currentPasswordController, true),
-          buildTextField('New Password', newPasswordController, true),
-          const SizedBox(height: 25),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
             children: [
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
-                onPressed: () {},
-                child: const Text('Edit Profile'),
+
+              /// TITLE
+              const Text(
+                "My Profile",
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-                onPressed: saveChanges,
-                child: const Text('Save Changes'),
+
+              const SizedBox(height: 25),
+
+              /// AVATAR
+              const CircleAvatar(
+                radius: 45,
+                backgroundColor: Colors.blue,
+                child: Icon(Icons.person, size: 40, color: Colors.white),
+              ),
+
+              const SizedBox(height: 10),
+
+              Text(
+                nameController.text,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+
+              Text(emailController.text),
+
+              const SizedBox(height: 25),
+
+              /// FORM CARD
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  children: [
+
+                    _inputField("Name", nameController),
+                    const SizedBox(height: 15),
+
+                    _inputField("Email", emailController),
+                    const SizedBox(height: 15),
+
+                    _inputField("Current Password",
+                        currentPasswordController,
+                        isPassword: true),
+                    const SizedBox(height: 15),
+
+                    _inputField("New Password",
+                        newPasswordController,
+                        isPassword: true),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 25),
+
+              /// 🔥 BUTTONS
+              Row(
+                children: [
+
+                  /// EDIT BUTTON
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        setState(() {
+                          isEditing = true;
+                        });
+                      },
+                      child: const Text("Edit Profile"),
+                    ),
+                  ),
+
+                  const SizedBox(width: 10),
+
+                  /// SAVE BUTTON
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: isEditing ? updateProfile : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                      ),
+                      child: const Text(
+                        "Save Changes",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget buildTextField(
-    String label,
-    TextEditingController controller, [
-    bool isPassword = false,
-  ]) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 15),
-      child: TextField(
-        controller: controller,
-        obscureText: isPassword,
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
         ),
       ),
     );
   }
 
-  Future<void> saveChanges() async {
-    if (_user == null) return;
-
-    await FirebaseFirestore.instance.collection('users').doc(_user!.uid).set({
-      'email': emailController.text.trim(),
-      'phone': phoneController.text.trim(),
-    }, SetOptions(merge: true));
-
-    if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Profile updated')));
+  /// 🔥 INPUT FIELD (ENABLE/DISABLE)
+  Widget _inputField(
+      String label,
+      TextEditingController controller,
+      {bool isPassword = false}) {
+    return TextField(
+      controller: controller,
+      obscureText: isPassword,
+      enabled: isEditing, // 🔥 KEY FEATURE
+      decoration: InputDecoration(
+        labelText: label,
+        filled: true,
+        fillColor:
+            isEditing ? Colors.white : Colors.grey.shade200,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
   }
 }
