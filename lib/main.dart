@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 
-// Import your screens
+// ✅ Import only what you need
+import 'screens/customernavbar.dart';
 import 'screens/splashscreen.dart';
 import 'screens/signupscreen.dart';
 import 'screens/profilescreen.dart';
 import 'screens/editprofilescreen.dart';
 import 'screens/loginscreen.dart';
-import 'screens/homescreencustomer.dart';
 import 'screens/homescreenworker.dart';
 import 'screens/createjobscreen.dart';
 import 'screens/myjobsscreen.dart';
-
-// ❌ DO NOT add viewbidsscreen here in routes
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,11 +20,11 @@ void main() async {
 
   debugPrint("🔥 Firebase Connected Successfully!");
 
-  runApp(FixFinderApp());
+  runApp(const FixFinderApp());
 }
 
 class FixFinderApp extends StatelessWidget {
-  const FixFinderApp({super.key}); // ✅ added const constructor
+  const FixFinderApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -45,11 +43,12 @@ class FixFinderApp extends StatelessWidget {
         '/editProfile': (context) => const EditProfileScreen(),
         '/myJobs': (context) => const MyJobsScreen(),
 
-        '/home': (context) => const HomeScreenCustomer(),
-        '/workerHome': (context) =>  HomeScreenWorker(),
+        // ✅ IMPORTANT: This now loads Bottom Nav
+        '/home': (context) => const CustomerNavBar(),
+
+        '/workerHome': (context) => HomeScreenWorker(),
 
         '/createJob': (context) => const CreateJobScreen(),
-      
       },
     );
   }
