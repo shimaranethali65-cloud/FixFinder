@@ -5,10 +5,9 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // ✅ NEW
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../constants/app_colors.dart';
-import 'jobdetailsscreen.dart';
 
 class CreateJobScreen extends StatefulWidget {
   const CreateJobScreen({super.key});
@@ -47,7 +46,6 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
     _startLocationUpdates();
   }
 
-  // 📍 ADDRESS
   Future<String> getAddressFromLatLng(double lat, double lng) async {
     try {
       List<Placemark> placemarks =
@@ -57,7 +55,6 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
 
       List<String?> parts = [
         place.street,
-        place.subLocality,
         place.locality,
         place.administrativeArea,
         place.country,
@@ -71,11 +68,10 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
     }
   }
 
-  // 📍 LOCATION STREAM
   void _startLocationUpdates() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      setState(() => locationText = "Location service disabled");
+      setState(() => locationText = "Location disabled");
       return;
     }
 
@@ -89,7 +85,6 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
     positionStream = Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.high,
-        distanceFilter: 10,
       ),
     ).listen((Position position) async {
       LatLng newLatLng =
@@ -112,7 +107,6 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
     super.dispose();
   }
 
-  // 📌 JOB SELECTOR
   void _openJobSelector() {
     showModalBottomSheet(
       context: context,
@@ -136,11 +130,11 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
     );
   }
 
-  // 🔥 SAVE JOB TO FIREBASE
+  // 🔥 UPDATED NAVIGATION
   Future<void> _postJob() async {
     if (descriptionController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter description")),
+        const SnackBar(content: Text("Enter description")),
       );
       return;
     }
@@ -160,16 +154,20 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
       'createdAt': Timestamp.now(),
     });
 
-    Navigator.push(
+    // ✅ GO TO NAVBAR + SHOW JOB DETAILS
+    Navigator.pushNamed(
       context,
-      MaterialPageRoute(
-        builder: (context) => JobDetailsScreen(
-          category: selectedJob,
-          description: descriptionController.text,
-          location: locationText,
-          jobId: jobId, // ✅ FIXED
-        ),
-      ),
+      '/home',
+      arguments: {
+        "index": 0,
+        "showJobDetails": true,
+        "jobData": {
+          "category": selectedJob,
+          "description": descriptionController.text,
+          "location": locationText,
+          "jobId": jobId,
+        }
+      },
     );
   }
 
@@ -179,162 +177,161 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
       backgroundColor: const Color(0xFFF5F5F5),
 
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
 
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-
-                // 🔙 HEADER
-                Row(
+            /// SCROLLABLE CONTENT
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.arrow_back),
+
+                    /// BACK BUTTON
+                    Row(
+                      children: [
+                        IconButton(
+                          onPressed: () {
+                            Navigator.pushNamedAndRemoveUntil(
+                              context,
+                              '/home',
+                              (route) => false,
+                            );
+                          },
+                          icon: const Icon(Icons.arrow_back),
+                        ),
+                        const Expanded(
+                          child: Text(
+                            "Create Job",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 40),
+                      ],
                     ),
-                    const Expanded(
-                      child: Text(
-                        "Create Job",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+
+                    const SizedBox(height: 20),
+
+                    const Text("Job Title"),
+                    const SizedBox(height: 8),
+
+                    GestureDetector(
+                      onTap: _openJobSelector,
+                      child: Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.blue),
+                        ),
+                        child: Row(
+                          mainAxisAlignment:
+                              MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(selectedJob),
+                            const Icon(Icons.keyboard_arrow_down),
+                          ],
                         ),
                       ),
                     ),
-                    const SizedBox(width: 40),
-                  ],
-                ),
 
-                const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-                // JOB TITLE
-                const Text("Job Title"),
-                const SizedBox(height: 8),
+                    const Text("Description"),
+                    const SizedBox(height: 8),
 
-                GestureDetector(
-                  onTap: _openJobSelector,
-                  child: Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.blue),
+                    TextField(
+                      controller: descriptionController,
+                      maxLines: 4,
+                      decoration: InputDecoration(
+                        hintText: "Type here...",
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
                     ),
-                    child: Row(
-                      mainAxisAlignment:
-                          MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(selectedJob),
-                        const Icon(Icons.keyboard_arrow_down),
-                      ],
+
+                    const SizedBox(height: 20),
+
+                    const Text("Current Location"),
+                    const SizedBox(height: 8),
+
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.blue),
+                      ),
+                      child: Text(locationText),
                     ),
-                  ),
-                ),
 
-                const SizedBox(height: 20),
+                    const SizedBox(height: 16),
 
-                // DESCRIPTION
-                const Text("Description"),
-                const SizedBox(height: 8),
-
-                TextField(
-                  controller: descriptionController,
-                  maxLines: 4,
-                  decoration: InputDecoration(
-                    hintText: "Type here...",
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // LOCATION
-                const Text("Current Location"),
-                const SizedBox(height: 8),
-
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.blue),
-                  ),
-                  child: Text(locationText),
-                ),
-
-                const SizedBox(height: 16),
-
-                // MAP
-                currentLatLng != null
-                    ? SizedBox(
-                        height: 200,
-                        child: FlutterMap(
-                          options: MapOptions(
-                            initialCenter: currentLatLng!,
-                            initialZoom: 15,
-                          ),
-                          children: [
-                            TileLayer(
-                              urlTemplate:
-                                  "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-                              userAgentPackageName:
-                                  'com.example.fixfinder',
-                            ),
-                            MarkerLayer(
-                              markers: [
-                                Marker(
-                                  point: currentLatLng!,
-                                  width: 40,
-                                  height: 40,
-                                  child: const Icon(
-                                    Icons.location_pin,
-                                    color: Colors.red,
-                                  ),
+                    currentLatLng != null
+                        ? SizedBox(
+                            height: 200,
+                            child: FlutterMap(
+                              options: MapOptions(
+                                initialCenter: currentLatLng!,
+                                initialZoom: 15,
+                              ),
+                              children: [
+                                TileLayer(
+                                  urlTemplate:
+                                      "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                                  userAgentPackageName:
+                                      'com.example.fixfinder',
+                                ),
+                                MarkerLayer(
+                                  markers: [
+                                    Marker(
+                                      point: currentLatLng!,
+                                      width: 40,
+                                      height: 40,
+                                      child: const Icon(
+                                        Icons.location_pin,
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
-                          ],
-                        ),
-                      )
-                    : const Center(child: CircularProgressIndicator()),
+                          )
+                        : const Center(child: CircularProgressIndicator()),
 
-                const SizedBox(height: 30),
-
-                // 🔵 POST BUTTON
-                Center(
-  child: SizedBox(
-    width: 200,
-    height: 45,
-    child: ElevatedButton(
-      onPressed: _postJob,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.primaryBlue,
-        foregroundColor: Colors.white, 
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(6), 
-        ),
-      ),
-      child: const Text(
-        "Post Appeal",
-        style: TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w600,
-          color: Colors.white, 
-        ),
-      ),
-    ),
-  ),
-),
-              ],
+                    const SizedBox(height: 20),
+                  ],
+                ),
+              ),
             ),
-          ),
+
+            /// BUTTON
+            Container(
+              padding: const EdgeInsets.all(16),
+              color: Colors.white,
+              child: SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _postJob,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryBlue,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text("Post Appeal"),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
