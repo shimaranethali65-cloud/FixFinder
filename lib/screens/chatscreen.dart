@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'rating_screen.dart';
+import 'ratingscreen.dart';
 
 class ChatScreen extends StatelessWidget {
   const ChatScreen({super.key});
@@ -90,13 +90,14 @@ class ChatScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => const RatingScreen()),
+                        builder: (context) => const RatingScreen(),
+                      ),
                     );
                   },
-                )
+                ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
