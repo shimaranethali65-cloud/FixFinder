@@ -10,6 +10,7 @@ import 'screens/loginscreen.dart';
 import 'screens/homescreencustomer.dart';
 import 'screens/homescreenworker.dart';
 import 'screens/createjobscreen.dart';
+import 'screens/myjobsscreen.dart';
 
 // ❌ DO NOT add viewbidsscreen here in routes
 
@@ -42,6 +43,7 @@ class FixFinderApp extends StatelessWidget {
 
         '/profile': (context) => const ProfileScreen(),
         '/editProfile': (context) => const EditProfileScreen(),
+        '/myJobs': (context) => const MyJobsScreen(),
 
         '/home': (context) => const HomeScreenCustomer(),
         '/workerHome': (context) =>  HomeScreenWorker(),
