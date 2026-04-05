@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:fixfinder/screens/myjobsscreen.dart';
-import 'package:fixfinder/screens/profilescreen.dart';
+import 'viewjobdetailsscreen.dart';
 
 class HomeScreenWorker extends StatelessWidget {
   const HomeScreenWorker({super.key});
@@ -15,28 +14,28 @@ class HomeScreenWorker extends StatelessWidget {
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          children: [
+        children: [
 
-            Row(
-              children: const [
-                Icon(Icons.handyman),
-                SizedBox(width: 10),
-                Text(
-                  "Nearby Jobs",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                )
-              ],
-            ),
+          Row(
+            children: const [
+              Icon(Icons.handyman),
+              SizedBox(width: 10),
+              Text(
+                "Nearby Jobs",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              )
+            ],
+          ),
 
-            const SizedBox(height: 20),
+          const SizedBox(height: 20),
 
-            jobCard("Fix leaking pipe"),
-            jobCard("Repair broken water pipe"),
-            jobCard("Fix pipe joint leak"),
-            jobCard("Fix leaking shower"),
-            jobCard("Repair toilet flush"),
-          ],
-        ),
+          jobCard(context, "Fix leaking pipe"),
+          jobCard(context, "Repair broken water pipe"),
+          jobCard(context, "Fix pipe joint leak"),
+          jobCard(context, "Fix leaking shower"),
+          jobCard(context, "Repair toilet flush"),
+        ],
+      ),
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 0,
@@ -73,7 +72,7 @@ class HomeScreenWorker extends StatelessWidget {
     );
   }
 
-  Widget jobCard(String title) {
+  Widget jobCard(BuildContext context, String title) {
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
       padding: const EdgeInsets.all(15),
@@ -89,7 +88,12 @@ class HomeScreenWorker extends StatelessWidget {
 
           ElevatedButton(
             onPressed: () {
-              print("$title clicked");
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ViewJobDetailsScreen(),
+                ),
+              );
             },
             child: const Text("View"),
           )
