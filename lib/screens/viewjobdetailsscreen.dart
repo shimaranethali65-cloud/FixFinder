@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'submitbidscreen.dart';
 
 class ViewJobDetailsScreen extends StatelessWidget {
   final String jobId;
@@ -174,12 +175,13 @@ class ViewJobDetailsScreen extends StatelessWidget {
                   height: 55,
                   child: ElevatedButton(
                     onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Bid feature coming soon"),
-                        ),
-                      );
-                    },
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => SubmitBidPage(jobId: jobId),
+    ),
+  );
+},
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       elevation: 4,

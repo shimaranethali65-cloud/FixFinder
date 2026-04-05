@@ -230,7 +230,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: const Color.fromARGB(255, 9, 117, 206),
+                          color: const Color.fromARGB(255, 250, 251, 251),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: const Color.fromARGB(255, 227, 229, 230)),
                         ),
