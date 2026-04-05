@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 
-// ✅ Import only what you need
+// Screens
 import 'screens/customernavbar.dart';
 import 'screens/splashscreen.dart';
 import 'screens/signupscreen.dart';
@@ -15,7 +15,6 @@ import 'screens/myjobsscreen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ✅ Initialize Firebase
   await Firebase.initializeApp();
 
   debugPrint("🔥 Firebase Connected Successfully!");
@@ -43,8 +42,21 @@ class FixFinderApp extends StatelessWidget {
         '/editProfile': (context) => const EditProfileScreen(),
         '/myJobs': (context) => const MyJobsScreen(),
 
-        // ✅ IMPORTANT: This now loads Bottom Nav
-        '/home': (context) => const CustomerNavBar(),
+        // ✅ FINAL SAFE HOME ROUTE (NO CRASH EVER)
+        '/home': (context) {
+          final route = ModalRoute.of(context);
+          final args = route?.settings.arguments;
+
+          return CustomerNavBar(
+            initialIndex: (args is Map && args["index"] != null)
+                ? args["index"]
+                : 0,
+            showJobDetails: (args is Map && args["showJobDetails"] != null)
+                ? args["showJobDetails"]
+                : false,
+            jobData: (args is Map) ? args["jobData"] : null,
+          );
+        },
 
         '/workerHome': (context) => HomeScreenWorker(),
 

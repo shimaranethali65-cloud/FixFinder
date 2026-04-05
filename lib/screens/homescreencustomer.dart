@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'customernavbar.dart'; // 🔥 IMPORTANT
 
 class HomeScreenCustomer extends StatefulWidget {
   const HomeScreenCustomer({super.key});
@@ -101,7 +102,7 @@ class _HomeScreenCustomerState extends State<HomeScreenCustomer> {
                     crossAxisCount: 3,
                     crossAxisSpacing: 14,
                     mainAxisSpacing: 18,
-                    childAspectRatio: 0.85,
+                    childAspectRatio: 0.9,
                   ),
                   itemBuilder: (context, index) {
                     return _serviceCard(
@@ -118,14 +119,15 @@ class _HomeScreenCustomerState extends State<HomeScreenCustomer> {
     );
   }
 
-  // ✅ CLICKABLE CARD
+  // ✅ CLICKABLE CARD (🔥 FIXED NAVIGATION)
   Widget _serviceCard(String name, String image) {
     return GestureDetector(
       onTap: () {
-        Navigator.pushNamed(
+        Navigator.pushReplacement(
           context,
-          '/createJob',
-          arguments: name, // 🔥 PASS SELECTED SERVICE
+          MaterialPageRoute(
+            builder: (_) => const CustomerNavBar(initialIndex: 1),
+          ),
         );
       },
       child: Column(
