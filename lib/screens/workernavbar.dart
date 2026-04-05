@@ -6,8 +6,13 @@ import 'profilescreen.dart';
 
 class WorkerNavBar extends StatefulWidget {
   final int initialIndex;
+  final Widget? extraScreen; 
 
-  const WorkerNavBar({super.key, this.initialIndex = 0});
+  const WorkerNavBar({
+    super.key,
+    this.initialIndex = 0,
+    this.extraScreen,
+  });
 
   @override
   State<WorkerNavBar> createState() => _WorkerNavBarState();
@@ -15,25 +20,35 @@ class WorkerNavBar extends StatefulWidget {
 
 class _WorkerNavBarState extends State<WorkerNavBar> {
   late int _selectedIndex;
-
-  final List<Widget> _screens = const [
-    HomeScreenWorker(),
-    MyJobsScreen(),
-    ProfileScreen(),
-  ];
+  late List<Widget> _screens;
 
   @override
   void initState() {
     super.initState();
+
     _selectedIndex = widget.initialIndex;
+
+    _screens = [
+      const HomeScreenWorker(),
+      const MyJobsScreen(),
+      const ProfileScreen(),
+    ];
+
+    // ✅ Add extra screen if exists
+    if (widget.extraScreen != null) {
+      _screens.add(widget.extraScreen!);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(index: _selectedIndex, children: _screens),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _screens,
+      ),
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
+        currentIndex: _selectedIndex >= 3 ? 0 : _selectedIndex, // fix highlight
         onTap: (index) {
           setState(() {
             _selectedIndex = index;
@@ -48,7 +63,10 @@ class _WorkerNavBarState extends State<WorkerNavBar> {
             icon: Icon(Icons.work_outline),
             label: 'My Jobs',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profile',
+          ),
         ],
       ),
     );

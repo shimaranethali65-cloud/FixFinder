@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'submitbidscreen.dart';
+import 'workernavbar.dart';
 
 class ViewJobDetailsScreen extends StatelessWidget {
   final String jobId;
@@ -175,12 +176,15 @@ class ViewJobDetailsScreen extends StatelessWidget {
                   height: 55,
                   child: ElevatedButton(
                     onPressed: () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => SubmitBidPage(jobId: jobId),
+  Navigator.pushReplacement(
+  context,
+  MaterialPageRoute(
+    builder: (context) => WorkerNavBar(
+      initialIndex: 3,
+      extraScreen: SubmitBidPage(jobId: jobId),
     ),
-  );
+  ),
+);
 },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
