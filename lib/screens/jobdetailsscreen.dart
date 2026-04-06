@@ -4,19 +4,17 @@ import 'viewbidsscreen.dart';
 import 'ratingscreen.dart';
 
 class JobDetailsScreen extends StatelessWidget {
-  final String jobId;
-  final String workerUID; // Ensure this is exactly 'workerUID'
   final String category;
   final String description;
   final String location;
+  final String jobId;
 
   const JobDetailsScreen({
     super.key,
-    required this.jobId,
-    required this.workerUID, // <--- Error 1: This must be inside these { }
     required this.category,
     required this.description,
     required this.location,
+    required this.jobId,
   });
 
   @override
@@ -146,11 +144,7 @@ class JobDetailsScreen extends StatelessWidget {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => RatingScreen(
-                    workerId: workerUID, // Use the variable we defined above
-                  ),
-                ),
+                MaterialPageRoute(builder: (context) => const RatingScreen()),
               );
             },
             style: ElevatedButton.styleFrom(

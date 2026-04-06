@@ -57,16 +57,16 @@ class _CustomerNavBarState extends State<CustomerNavBar> {
     // 🔥 SHOW JOB DETAILS INSIDE NAVBAR
     if (widget.showJobDetails && widget.jobData != null) {
       body = JobDetailsScreen(
-        // The ?? "" means: "If this is null, use an empty text instead"
-        jobId: widget.jobData?["jobId"] ?? "no_id",
-        workerUID: widget.jobData?["workerUID"] ?? "no_uid",
-        category: widget.jobData?["category"] ?? "General",
-        description:
-            widget.jobData?["description"] ?? "No description provided",
-        location: widget.jobData?["location"] ?? "Location not available",
+        category: widget.jobData["category"],
+        description: widget.jobData["description"],
+        location: widget.jobData["location"],
+        jobId: widget.jobData["jobId"],
       );
     } else {
-      body = IndexedStack(index: _selectedIndex, children: _screens);
+      body = IndexedStack(
+        index: _selectedIndex,
+        children: _screens,
+      );
     }
 
     return Scaffold(
@@ -83,13 +83,22 @@ class _CustomerNavBarState extends State<CustomerNavBar> {
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: "Home",
+          ),
           BottomNavigationBarItem(
             icon: Icon(Icons.add_circle),
             label: "Create",
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.chat),
+            label: "Chat",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: "Profile",
+          ),
         ],
       ),
     );
