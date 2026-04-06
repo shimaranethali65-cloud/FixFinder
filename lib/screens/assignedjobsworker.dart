@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'myjobsscreen.dart';
 
 class WorkerAssignedJobsScreen extends StatefulWidget {
   const WorkerAssignedJobsScreen({super.key});
@@ -10,9 +11,7 @@ class WorkerAssignedJobsScreen extends StatefulWidget {
       _WorkerAssignedJobsScreenState();
 }
 
-class _WorkerAssignedJobsScreenState
-    extends State<WorkerAssignedJobsScreen> {
-
+class _WorkerAssignedJobsScreenState extends State<WorkerAssignedJobsScreen> {
   final user = FirebaseAuth.instance.currentUser;
 
   @override
@@ -20,10 +19,7 @@ class _WorkerAssignedJobsScreenState
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
 
-      appBar: AppBar(
-        title: const Text("Assigned Jobs"),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text("Assigned Jobs"), centerTitle: true),
 
       body: user == null
           ? const Center(child: Text("User not logged in"))
@@ -31,21 +27,19 @@ class _WorkerAssignedJobsScreenState
               stream: FirebaseFirestore.instance
                   .collection('jobs')
                   .where('assignedTo', isEqualTo: user!.uid)
-                  .where('status', whereIn: ['assigned', 'completed']) // ✅ FIX
+                  .where(
+                    'status',
+                    isEqualTo: 'assigned',
+                  ) // Only show active tasks here
                   .snapshots(),
 
               builder: (context, snapshot) {
-                if (snapshot.connectionState ==
-                    ConnectionState.waiting) {
-                  return const Center(
-                      child: CircularProgressIndicator());
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
                 }
 
-                if (!snapshot.hasData ||
-                    snapshot.data!.docs.isEmpty) {
-                  return const Center(
-                    child: Text("No assigned jobs yet"),
-                  );
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Center(child: Text("No assigned jobs yet"));
                 }
 
                 final jobs = snapshot.data!.docs;
@@ -54,9 +48,7 @@ class _WorkerAssignedJobsScreenState
                   padding: const EdgeInsets.all(12),
                   itemCount: jobs.length,
                   itemBuilder: (context, index) {
-
-                    final job =
-                        jobs[index].data() as Map<String, dynamic>;
+                    final job = jobs[index].data() as Map<String, dynamic>;
 
                     final jobId = jobs[index].id;
                     final status = job['status'] ?? 'assigned';
@@ -80,10 +72,8 @@ class _WorkerAssignedJobsScreenState
                       ),
 
                       child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-
                           /// 🔹 CATEGORY
                           Text(
                             job['category'] ?? "No category",
@@ -109,9 +99,7 @@ class _WorkerAssignedJobsScreenState
                           /// 🔹 DESCRIPTION
                           Text(
                             job['description'] ?? "",
-                            style: const TextStyle(
-                              fontSize: 15,
-                            ),
+                            style: const TextStyle(fontSize: 15),
                           ),
 
                           const SizedBox(height: 12),
@@ -131,96 +119,68 @@ class _WorkerAssignedJobsScreenState
                           /// 🔹 BUTTON / STATUS
                           SizedBox(
                             width: double.infinity,
-                            child: status == 'completed'
-                                ? Container(
-                                    padding:
-                                        const EdgeInsets.symmetric(
-                                            vertical: 12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.green.withOpacity(0.1),
-                                      borderRadius:
-                                          BorderRadius.circular(8),
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text("Complete Job"),
+                                    content: const Text(
+                                      "Mark this job as completed?",
                                     ),
-                                    child: const Center(
-                                      child: Text(
-                                        "✅ Already Completed",
-                                        style: TextStyle(
-                                          color: Colors.green,
-                                          fontWeight:
-                                              FontWeight.bold,
-                                        ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, false),
+                                        child: const Text("Cancel"),
                                       ),
-                                    ),
-                                  )
-                                : ElevatedButton(
-                                    onPressed: () async {
-
-                                      final confirm =
-                                          await showDialog<bool>(
-                                        context: context,
-                                        builder: (context) {
-                                          return AlertDialog(
-                                            title: const Text(
-                                                "Complete Job"),
-                                            content: const Text(
-                                                "Mark this job as completed?"),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () =>
-                                                    Navigator.pop(
-                                                        context,
-                                                        false),
-                                                child: const Text(
-                                                    "Cancel"),
-                                              ),
-                                              ElevatedButton(
-                                                onPressed: () =>
-                                                    Navigator.pop(
-                                                        context,
-                                                        true),
-                                                child: const Text(
-                                                    "Yes"),
-                                              ),
-                                            ],
-                                          );
-                                        },
-                                      );
-
-                                      if (!mounted) return;
-                                      if (confirm != true) return;
-
-                                      await FirebaseFirestore.instance
-                                          .collection('jobs')
-                                          .doc(jobId)
-                                          .update({
-                                        'status': 'completed',
-                                      });
-
-                                      if (!mounted) return;
-
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                              "Job completed successfully"),
-                                        ),
-                                      );
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.blue,
-                                      shape:
-                                          RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(8),
+                                      ElevatedButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, true),
+                                        child: const Text("Yes"),
                                       ),
-                                    ),
-                                    child: const Text(
-                                      "Mark as Completed",
-                                      style: TextStyle(
-                                          color: Colors.white),
-                                    ),
+                                    ],
                                   ),
-                          )
+                                );
+
+                                if (confirm == true) {
+                                  await FirebaseFirestore.instance
+                                      .collection('jobs')
+                                      .doc(jobs[index].id)
+                                      .update({'status': 'completed'});
+
+                                  if (!mounted) return;
+
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const MyJobsScreen(),
+                                    ),
+                                  );
+
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        "Job completed successfully!",
+                                      ),
+                                      backgroundColor: Colors.green,
+                                    ),
+                                  );
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: const Text(
+                                "Mark as Completed",
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     );

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'editprofilescreen.dart';
+import 'editProfilescreen.dart';
+import 'loginscreen.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String name;
@@ -73,7 +74,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       required String name,
       required String role,
       required String email,
-      required int jobsCompleted,
       required double rating,
       required int reviewsCount,
       required bool isVerified,
@@ -146,13 +146,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     final icon = rating >= threshold
                         ? Icons.star
                         : rating >= (threshold - 0.5)
-                            ? Icons.star_half
-                            : Icons.star_border;
-                    return Icon(
-                      icon,
-                      size: 16,
-                      color: const Color(0xFFFFB300),
-                    );
+                        ? Icons.star_half
+                        : Icons.star_border;
+                    return Icon(icon, size: 16, color: const Color(0xFFFFB300));
                   }),
                 ),
                 const SizedBox(width: 6),
@@ -170,11 +166,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
               borderColor: borderBlue,
             ),
             const SizedBox(height: 10),
-            _InfoTile(
-              icon: Icons.assignment_turned_in,
-              label: 'Jobs Completed :',
-              value: jobsCompleted.toString(),
-              borderColor: borderBlue,
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('jobs')
+                  .where('workerUID', isEqualTo: _user?.uid)
+                  .where('status', isEqualTo: 'completed')
+                  .snapshots(),
+              builder: (context, jobSnapshot) {
+                // This logic calculates the number of documents found
+                String liveCount = jobSnapshot.hasData
+                    ? jobSnapshot.data!.docs.length.toString()
+                    : "...";
+
+                return _InfoTile(
+                  icon: Icons.assignment_turned_in,
+                  label: 'Jobs Completed :',
+                  value: liveCount, // Using the live number here
+                  borderColor: borderBlue,
+                );
+              },
             ),
             const SizedBox(height: 10),
             _InfoTile(
@@ -191,27 +201,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onPressed: () async {
                   final updated = await Navigator.of(context)
                       .push<ProfileUpdate>(
-                    MaterialPageRoute(
-                      builder: (_) => EditProfileScreen(
-                        initialName: name,
-                        initialRole: role,
-                        initialEmail: email,
-                      ),
-                    ),
-                  );
+                        MaterialPageRoute(
+                          builder: (_) => EditProfileScreen(
+                            initialName: name,
+                            initialRole: role,
+                            initialEmail: email,
+                          ),
+                        ),
+                      );
                   if (updated == null) return;
                   if (_user != null) {
                     await FirebaseFirestore.instance
                         .collection('users')
                         .doc(_user!.uid)
-                        .set(
-                      {
-                        'name': updated.name,
-                        'role': updated.role,
-                        'email': updated.email,
-                      },
-                      SetOptions(merge: true),
-                    );
+                        .set({
+                          'name': updated.name,
+                          'role': updated.role,
+                          'email': updated.email,
+                        }, SetOptions(merge: true));
                   }
                   setState(() {
                     _name = updated.name;
@@ -235,7 +242,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
               width: 150,
               height: 40,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () async {
+                  // 1. Show a confirmation dialog (Optional but professional)
+                  bool? confirmLogout = await showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text("Logout"),
+                      content: const Text("Are you sure you want to logout?"),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text("Cancel"),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text(
+                            "Logout",
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (confirmLogout == true) {
+                    // 2. Sign out from Firebase
+                    await FirebaseAuth.instance.signOut();
+
+                    if (!context.mounted) return;
+
+                    // 3. Navigate to Login and CLEAR all previous screens
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LoginScreen(),
+                      ), // Use your actual Login Screen name here
+                      (route) =>
+                          false, // This line deletes the entire screen history
+                    );
+                  }
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF2B2B),
                   foregroundColor: Colors.white,
@@ -276,7 +322,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 name: _name,
                 role: _role,
                 email: _email,
-                jobsCompleted: _jobsCompleted,
                 rating: _rating,
                 reviewsCount: _reviewsCount,
                 isVerified: _isVerified,
@@ -293,7 +338,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       name: _name,
                       role: _role,
                       email: _email,
-                      jobsCompleted: _jobsCompleted,
                       rating: _rating,
                       reviewsCount: _reviewsCount,
                       isVerified: _isVerified,
@@ -303,12 +347,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   final data = snapshot.data?.data();
                   final name = (data?['name'] as String?) ?? _name;
                   final role = (data?['role'] as String?) ?? _role;
-                  final email = (data?['email'] as String?) ??
-                      _user?.email ??
-                      _email;
+                  final email =
+                      (data?['email'] as String?) ?? _user?.email ?? _email;
                   final jobsCompleted =
                       (data?['jobsCompleted'] as int?) ?? _jobsCompleted;
-                  final rating = (data?['rating'] as num?)?.toDouble() ?? _rating;
+                  final rating =
+                      (data?['rating'] as num?)?.toDouble() ?? _rating;
                   final reviewsCount =
                       (data?['reviewsCount'] as int?) ?? _reviewsCount;
                   final isVerified =
@@ -319,7 +363,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     name: name,
                     role: role,
                     email: email,
-                    jobsCompleted: jobsCompleted,
                     rating: rating,
                     reviewsCount: reviewsCount,
                     isVerified: isVerified,
