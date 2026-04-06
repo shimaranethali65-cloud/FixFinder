@@ -8,7 +8,6 @@ class ProfileScreen extends StatefulWidget {
   final String name;
   final String role;
   final String email;
-  final int jobsCompleted;
   final double rating;
   final int reviewsCount;
   final bool isVerified;
@@ -19,7 +18,6 @@ class ProfileScreen extends StatefulWidget {
     this.name = 'Alex Don',
     this.role = 'Plumber',
     this.email = 'alexd@gmail.com',
-    this.jobsCompleted = 85,
     this.rating = 4.9,
     this.reviewsCount = 83,
     this.isVerified = true,
@@ -34,7 +32,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late String _name;
   late String _role;
   late String _email;
-  late int _jobsCompleted;
   late double _rating;
   late int _reviewsCount;
   late bool _isVerified;
@@ -49,7 +46,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _name = widget.name;
     _role = widget.role;
     _email = widget.email;
-    _jobsCompleted = widget.jobsCompleted;
     _rating = widget.rating;
     _reviewsCount = widget.reviewsCount;
     _isVerified = widget.isVerified;
@@ -165,27 +161,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               value: role,
               borderColor: borderBlue,
             ),
-            const SizedBox(height: 10),
-            StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('jobs')
-                  .where('workerUID', isEqualTo: _user?.uid)
-                  .where('status', isEqualTo: 'completed')
-                  .snapshots(),
-              builder: (context, jobSnapshot) {
-                // This logic calculates the number of documents found
-                String liveCount = jobSnapshot.hasData
-                    ? jobSnapshot.data!.docs.length.toString()
-                    : "...";
 
-                return _InfoTile(
-                  icon: Icons.assignment_turned_in,
-                  label: 'Jobs Completed :',
-                  value: liveCount, // Using the live number here
-                  borderColor: borderBlue,
-                );
-              },
-            ),
             const SizedBox(height: 10),
             _InfoTile(
               icon: Icons.alternate_email,
@@ -349,8 +325,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   final role = (data?['role'] as String?) ?? _role;
                   final email =
                       (data?['email'] as String?) ?? _user?.email ?? _email;
-                  final jobsCompleted =
-                      (data?['jobsCompleted'] as int?) ?? _jobsCompleted;
                   final rating =
                       (data?['rating'] as num?)?.toDouble() ?? _rating;
                   final reviewsCount =
