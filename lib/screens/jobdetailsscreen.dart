@@ -50,10 +50,7 @@ class JobDetailsScreen extends StatelessWidget {
                 // ✅ SUCCESS TEXT
                 const Text(
                   "Post Successful !",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
                 ),
 
                 const SizedBox(height: 30),
@@ -61,7 +58,7 @@ class JobDetailsScreen extends StatelessWidget {
                 // 🖼️ IMAGE
                 Center(
                   child: Image.asset(
-                    "assets/images/postsuccesful.png", 
+                    "assets/images/postsuccesful.png",
                     height: 180,
                   ),
                 ),
@@ -114,15 +111,12 @@ class JobDetailsScreen extends StatelessWidget {
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) =>
-                                        ViewBidsScreen(
-                                      jobId: jobId,
-                                    ),
+                                        ViewBidsScreen(jobId: jobId),
                                   ),
                                 );
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    AppColors.primaryBlue,
+                                backgroundColor: AppColors.primaryBlue,
                               ),
                               child: const Text(
                                 "View Bids",
@@ -150,9 +144,7 @@ class JobDetailsScreen extends StatelessWidget {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const RatingScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const RatingScreen()),
               );
             },
             style: ElevatedButton.styleFrom(
