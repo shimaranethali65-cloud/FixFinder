@@ -9,7 +9,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'jobdetailsscreen.dart';
 
-
 import '../constants/app_colors.dart';
 
 class CreateJobScreen extends StatefulWidget {
@@ -63,7 +62,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
         place.country,
       ];
 
-      parts.removeWhere((p) => p == null || p!.isEmpty);
+      parts.removeWhere((p) => p == null || p.isEmpty);
 
       return parts.join(", ");
     } catch (e) {
@@ -95,6 +94,8 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
 
       String address = await getAddressFromLatLng(
           position.latitude, position.longitude);
+
+      if (!mounted) return;
 
       setState(() {
         currentLatLng = newLatLng;
@@ -133,52 +134,66 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
     );
   }
 
-  // 🔥 UPDATED NAVIGATION
   Future<void> _postJob() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (descriptionController.text.isEmpty) {
+
+    if (descriptionController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Enter description")),
       );
       return;
     }
 
-    String jobId =
-        DateTime.now().millisecondsSinceEpoch.toString();
+    if (currentLatLng == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Fetching location...")),
+      );
+      return;
+    }
 
-    await FirebaseFirestore.instance
-        .collection('jobs')
-        .doc(jobId)
-        .set({
-      'jobId': jobId,
-      'category': selectedJob,
-      'description': descriptionController.text,
-      'location': locationText,
-      'status': 'waiting',
-      'createdAt': Timestamp.now(),
-      'postedBy': user?.email ?? "User",
-  'postedById': user?.uid,
-    });
+    try {
+      String jobId =
+          DateTime.now().millisecondsSinceEpoch.toString();
 
-    // ✅ GO TO NAVBAR + SHOW JOB DETAILS
-    Navigator.pushReplacement(
+      Map<String, dynamic> jobData = {
+        'jobId': jobId,
+        'category': selectedJob,
+        'description': descriptionController.text.trim(),
+        'location': locationText,
+        'latitude': currentLatLng!.latitude,
+        'longitude': currentLatLng!.longitude,
+        'status': 'waiting',
+        'createdAt': Timestamp.now(),
+        'postedBy': user?.email ?? "User",
+        'postedById': user?.uid ?? "",
+      };
+
+      // 🔥 SAVE TO FIRESTORE
+      await FirebaseFirestore.instance
+          .collection('jobs')
+          .doc(jobId)
+          .set(jobData);
+
+      // 🔥 NAVIGATE WITH FULL DATA
+      if (!mounted) return;
+
+      Navigator.push(
   context,
   MaterialPageRoute(
-    builder: (_) => JobDetailsScreen(
-  jobId: jobId,
-  category: selectedJob,
-  description: descriptionController.text,
-  location: locationText,
-),
+    builder: (context) => JobDetailsScreen(jobData: jobData),
   ),
 );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error posting job: $e")),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
-
       body: SafeArea(
         child: Column(
           children: [
@@ -191,7 +206,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
 
-                    /// BACK BUTTON
+                    /// HEADER
                     Row(
                       children: [
                         IconButton(
@@ -228,9 +243,9 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: const Color.fromARGB(255, 250, 251, 251),
+                          color: Colors.white,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color.fromARGB(255, 227, 229, 230)),
+                          border: Border.all(color: Colors.grey.shade300),
                         ),
                         child: Row(
                           mainAxisAlignment:

@@ -5,7 +5,7 @@ import 'homescreencustomer.dart';
 import 'createjobscreen.dart';
 import 'chatscreen.dart';
 import 'profilescreencustomer.dart';
-import 'mypostedjobscustomer.dart'; 
+import 'mypostedjobscustomer.dart';
 
 class CustomerNavBar extends StatefulWidget {
   final int initialIndex;
@@ -22,12 +22,13 @@ class CustomerNavBar extends StatefulWidget {
 class _CustomerNavBarState extends State<CustomerNavBar> {
   late int _selectedIndex;
 
-  final List<Widget> _screens = [
-    const HomeScreenCustomer(),
-    const MyPostedJobsScreen(), 
-    const CreateJobScreen(),
-    const ChatScreen(),
-    const ProfileScreenCustomer(),
+  // ✅ Keep screens const for performance
+  final List<Widget> _screens = const [
+    HomeScreenCustomer(),
+    MyPostedJobsScreen(),
+    CreateJobScreen(),
+    ChatScreen(),
+    ProfileScreenCustomer(),
   ];
 
   @override
@@ -37,6 +38,9 @@ class _CustomerNavBarState extends State<CustomerNavBar> {
   }
 
   void _onItemTapped(int index) {
+    // ✅ Prevent unnecessary rebuild
+    if (_selectedIndex == index) return;
+
     setState(() {
       _selectedIndex = index;
     });
@@ -45,30 +49,59 @@ class _CustomerNavBarState extends State<CustomerNavBar> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // ✅ Keeps state of each tab
       body: IndexedStack(
         index: _selectedIndex,
         children: _screens,
       ),
 
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        selectedItemColor: Colors.blue,
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.work), // 👈 NEW
-            label: "My Jobs",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add_circle),
-            label: "Create",
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
-        ],
+      // ✅ Modern styled navbar
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+          selectedItemColor: Colors.blue,
+          unselectedItemColor: Colors.grey,
+          showUnselectedLabels: true,
+          type: BottomNavigationBarType.fixed,
+          elevation: 10,
+
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home),
+              label: "Home",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.work_outline),
+              activeIcon: Icon(Icons.work),
+              label: "My Jobs",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.add_circle_outline),
+              activeIcon: Icon(Icons.add_circle),
+              label: "Create",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.chat_bubble_outline),
+              activeIcon: Icon(Icons.chat),
+              label: "Chat",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_outline),
+              activeIcon: Icon(Icons.person),
+              label: "Profile",
+            ),
+          ],
+        ),
       ),
     );
   }

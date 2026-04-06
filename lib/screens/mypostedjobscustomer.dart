@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
 import 'jobdetailsscreen.dart';
-import 'customernavbar.dart';
 
 class MyPostedJobsScreen extends StatelessWidget {
   const MyPostedJobsScreen({super.key});
@@ -11,23 +11,29 @@ class MyPostedJobsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
 
-    print("Current User UID: ${user?.uid}");
-
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
+
       appBar: AppBar(
-        title: const Text("My Posted Jobs"),
+        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        title: const Text(
+          "My Posted Jobs",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            Navigator.pushReplacement(
+            Navigator.pushNamedAndRemoveUntil(
               context,
-              MaterialPageRoute(
-                builder: (_) => const CustomerNavBar(initialIndex: 0),
-              ),
+              '/home',
+              (route) => false,
             );
           },
         ),
       ),
+
       body: user == null
           ? const Center(child: Text("User not logged in"))
           : StreamBuilder<QuerySnapshot>(
@@ -36,153 +42,226 @@ class MyPostedJobsScreen extends StatelessWidget {
                   .where('postedById', isEqualTo: user.uid)
                   .orderBy('createdAt', descending: true)
                   .snapshots(),
+
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                if (snapshot.connectionState ==
+                    ConnectionState.waiting) {
+                  return const Center(
+                      child: CircularProgressIndicator());
                 }
 
-                if (snapshot.hasError) {
-                  print("Firestore Error: ${snapshot.error}");
-                  return const Center(child: Text("Something went wrong"));
-                }
-
-                final jobs = snapshot.data?.docs ?? [];
-                print("Jobs count: ${jobs.length}");
-
-                if (jobs.isEmpty) {
+                if (!snapshot.hasData ||
+                    snapshot.data!.docs.isEmpty) {
                   return const Center(
                     child: Text("No jobs posted yet"),
                   );
                 }
 
+                final jobs = snapshot.data!.docs;
+
                 return ListView.builder(
+                  padding: const EdgeInsets.all(16),
                   itemCount: jobs.length,
                   itemBuilder: (context, index) {
-                    final job = jobs[index];
-                    final data = job.data() as Map<String, dynamic>;
+                    final job =
+                        jobs[index].data() as Map<String, dynamic>;
 
-                    return Card(
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                    final jobId = job['jobId'];
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 14),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.04),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                      margin: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // 🔹 CATEGORY
-                            Text(
-                              data['category'] ?? "No category",
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
 
-                            const SizedBox(height: 6),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
 
-                            // 🔹 DESCRIPTION
-                            Text(
-                              data['description'] ?? "",
-                              style: const TextStyle(fontSize: 14),
-                            ),
+                          /// 🔹 TOP ROW (TITLE + BUTTONS)
+                          Row(
+                            crossAxisAlignment:
+                                CrossAxisAlignment.start,
+                            children: [
 
-                            const SizedBox(height: 6),
+                              /// LEFT TEXT
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
 
-                            // 🔹 LOCATION
-                            Row(
-                              children: [
-                                const Icon(Icons.location_on,
-                                    size: 16, color: Colors.grey),
-                                const SizedBox(width: 4),
-                                Expanded(
-                                  child: Text(
-                                    data['location'] ?? "",
-                                    style: const TextStyle(
-                                        color: Colors.grey),
-                                  ),
+                                    /// CATEGORY
+                                    Text(
+                                      job['category'] ??
+                                          "No category",
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight:
+                                            FontWeight.bold,
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 4),
+
+                                    /// LOCATION
+                                    Text(
+                                      job['location'] ?? "",
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
+                              ),
 
-                            const SizedBox(height: 12),
+                              /// RIGHT BUTTONS (HORIZONTAL)
+                              Row(
+                                children: [
 
-                            // 🔥 UPDATED BUTTONS (SMALL + RIGHT SIDE)
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                // 🔵 VIEW
-                                TextButton.icon(
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => JobDetailsScreen(
-                                          jobId: job.id,
-                                          category: data['category'],
-                                          description: data['description'],
-                                          location: data['location'],
+                                  /// 🔵 VIEW
+                                  SizedBox(
+                                    height: 32,
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                JobDetailsScreen(
+                                                    jobData: job),
+                                          ),
+                                        );
+                                      },
+                                      style:
+                                          ElevatedButton.styleFrom(
+                                        backgroundColor:
+                                            Colors.blue,
+                                             foregroundColor: Colors.white,
+                                        padding:
+                                            const EdgeInsets
+                                                .symmetric(
+                                                horizontal: 12),
+                                        shape:
+                                            RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius
+                                                  .circular(8),
                                         ),
                                       ),
-                                    );
-                                  },
-                                  icon: const Icon(Icons.visibility, size: 18),
-                                  label: const Text("View"),
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: Colors.blue,
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 4),
-                                  ),
-                                ),
-
-                                const SizedBox(width: 8),
-
-                                // 🔴 DELETE
-                                TextButton.icon(
-                                  onPressed: () async {
-                                    final confirm = await showDialog(
-                                      context: context,
-                                      builder: (context) => AlertDialog(
-                                        title: const Text("Delete Job"),
-                                        content: const Text(
-                                            "Are you sure you want to delete this job?"),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.pop(context, false),
-                                            child: const Text("Cancel"),
-                                          ),
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.pop(context, true),
-                                            child: const Text("Delete"),
-                                          ),
-                                        ],
+                                      child: const Text(
+                                        "View",
+                                        style: TextStyle(
+                                            fontSize: 12),
                                       ),
-                                    );
-
-                                    if (confirm == true) {
-                                      await FirebaseFirestore.instance
-                                          .collection('jobs')
-                                          .doc(job.id)
-                                          .delete();
-                                    }
-                                  },
-                                  icon: const Icon(Icons.delete, size: 18),
-                                  label: const Text("Delete"),
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: Colors.red,
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 4),
+                                    ),
                                   ),
-                                ),
-                              ],
+
+                                  const SizedBox(width: 8),
+
+                                  /// 🔴 DELETE
+                                  SizedBox(
+                                    height: 32,
+                                    child: OutlinedButton(
+                                      onPressed: () async {
+                                        final confirm =
+                                            await showDialog<
+                                                bool>(
+                                          context: context,
+                                          builder: (context) {
+                                            return AlertDialog(
+                                              title: const Text(
+                                                  "Delete Job"),
+                                              content: const Text(
+                                                  "Are you sure you want to delete this job?"),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () =>
+                                                      Navigator.pop(
+                                                          context,
+                                                          false),
+                                                  child: const Text(
+                                                      "Cancel"),
+                                                ),
+                                                ElevatedButton(
+                                                  onPressed: () =>
+                                                      Navigator.pop(
+                                                          context,
+                                                          true),
+                                                  style:
+                                                      ElevatedButton
+                                                          .styleFrom(
+                                                    backgroundColor:
+                                                        Colors.red,
+                                                  ),
+                                                  child: const Text(
+                                                      "Delete"),
+                                                ),
+                                              ],
+                                            );
+                                          },
+                                        );
+
+                                        if (confirm != true)
+                                          return;
+
+                                        await FirebaseFirestore
+                                            .instance
+                                            .collection('jobs')
+                                            .doc(jobId)
+                                            .delete();
+                                      },
+                                      style:
+                                          OutlinedButton.styleFrom(
+                                        foregroundColor:
+                                            Colors.red,
+                                        side: const BorderSide(
+                                            color: Colors.red),
+                                        padding:
+                                            const EdgeInsets
+                                                .symmetric(
+                                                horizontal: 12),
+                                        shape:
+                                            RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius
+                                                  .circular(8),
+                                        ),
+                                      ),
+                                      child: const Text(
+                                        "Delete",
+                                        style: TextStyle(
+                                            fontSize: 12),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 10),
+
+                          /// 🔹 DESCRIPTION
+                          Text(
+                            job['description'] ??
+                                "No description",
+                            style: const TextStyle(
+                              fontSize: 14,
+                              height: 1.4,
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     );
                   },
