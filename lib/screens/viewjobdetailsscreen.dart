@@ -176,13 +176,10 @@ class ViewJobDetailsScreen extends StatelessWidget {
                   height: 55,
                   child: ElevatedButton(
                     onPressed: () {
-  Navigator.pushReplacement(
+  Navigator.push(
   context,
   MaterialPageRoute(
-    builder: (context) => WorkerNavBar(
-      initialIndex: 3,
-      extraScreen: SubmitBidPage(jobId: jobId),
-    ),
+    builder: (context) => SubmitBidPage(jobId: jobId),
   ),
 );
 },

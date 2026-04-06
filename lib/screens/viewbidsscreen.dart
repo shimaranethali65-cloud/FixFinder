@@ -187,10 +187,11 @@ class ViewBidsScreen extends StatelessWidget {
 
                               if (confirm == true) {
                                 await jobRef.update({
-                                  'status': 'Worker Selected',
-                                  'selectedWorkerId': data['workerId'],
-                                  'selectedWorkerName': workerName,
-                                });
+  'assignedTo': data['workerId'],        
+  'assignedPrice': data['price'],      
+  'status': 'assigned',                  
+  'selectedWorkerName': workerName,      
+});
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context)
                                       .showSnackBar(
