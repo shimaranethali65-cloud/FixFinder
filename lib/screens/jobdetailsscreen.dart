@@ -1,26 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../constants/app_colors.dart';
 import 'viewbidsscreen.dart';
-import 'ratingscreen.dart';
 
-class JobDetailsScreen extends StatelessWidget {
-  final String jobId;
-  final String workerUID; // Ensure this is exactly 'workerUID'
-  final String category;
-  final String description;
-  final String location;
+class JobDetailsScreen extends StatefulWidget {
+  final Map<String, dynamic> jobData;
 
   const JobDetailsScreen({
     super.key,
-    required this.jobId,
-    required this.workerUID, // <--- Error 1: This must be inside these { }
-    required this.category,
-    required this.description,
-    required this.location,
+    required this.jobData,
   });
 
   @override
+  State<JobDetailsScreen> createState() => _JobDetailsScreenState();
+}
+
+class _JobDetailsScreenState extends State<JobDetailsScreen> {
+
+  @override
   Widget build(BuildContext context) {
+
+    // ✅ SAFE DATA EXTRACTION
+    final category = widget.jobData['category'] ?? "N/A";
+    final description = widget.jobData['description'] ?? "N/A";
+    final location = widget.jobData['location'] ?? "N/A";
+    final jobId = widget.jobData['jobId'] ?? "";
+    final status = widget.jobData['status'] ?? "waiting";
+    final postedBy = widget.jobData['postedBy'] ?? "User";
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
 
@@ -30,7 +37,8 @@ class JobDetailsScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                // 🔙 HEADER
+
+                /// 🔙 HEADER
                 Row(
                   children: [
                     IconButton(
@@ -49,15 +57,18 @@ class JobDetailsScreen extends StatelessWidget {
 
                 const SizedBox(height: 20),
 
-                // ✅ SUCCESS TEXT
+                /// SUCCESS TEXT
                 const Text(
-                  "Post Successful !",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                  "Post Successful!",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
 
                 const SizedBox(height: 30),
 
-                // 🖼️ IMAGE
+                /// IMAGE
                 Center(
                   child: Image.asset(
                     "assets/images/postsuccesful.png",
@@ -65,9 +76,9 @@ class JobDetailsScreen extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 60),
+                const SizedBox(height: 40),
 
-                // 📦 DETAILS BOX
+                /// DETAILS BOX
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
@@ -79,7 +90,11 @@ class JobDetailsScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+
                       Text("Category : $category"),
+                      const SizedBox(height: 8),
+
+                      Text("Posted By : $postedBy"),
                       const SizedBox(height: 8),
 
                       Text("Location : $location"),
@@ -88,12 +103,14 @@ class JobDetailsScreen extends StatelessWidget {
                       Text("Description : $description"),
                       const SizedBox(height: 8),
 
-                      const Text("Status : Waiting for bids"),
+                      Text(
+                        "Status : ${status == 'completed' ? 'Completed' : 'Waiting for bids'}",
+                      ),
+
                       const SizedBox(height: 20),
 
                       Row(
                         children: [
-                          // Cancel
                           Expanded(
                             child: OutlinedButton(
                               onPressed: () {
@@ -105,10 +122,11 @@ class JobDetailsScreen extends StatelessWidget {
 
                           const SizedBox(width: 10),
 
-                          // View Bids
                           Expanded(
                             child: ElevatedButton(
                               onPressed: () {
+                                if (jobId.isEmpty) return;
+
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -137,39 +155,101 @@ class JobDetailsScreen extends StatelessWidget {
         ),
       ),
 
-      // ✅ FIXED: PROPER PLACE
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16),
-        child: SizedBox(
-          height: 50,
-          child: ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => RatingScreen(
-                    workerId: workerUID, // Use the variable we defined above
+      /// MARK AS COMPLETED BUTTON
+      bottomNavigationBar: jobId.isEmpty
+          ? null
+          : Padding(
+              padding: const EdgeInsets.all(16),
+              child: SizedBox(
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: () async {
+
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          title: const Text("Complete Job"),
+                          content: const Text(
+                            "Are you sure you want to mark this job as completed?",
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pop(context, false),
+                              child: const Text("Cancel"),
+                            ),
+                            ElevatedButton(
+                              onPressed: () =>
+                                  Navigator.pop(context, true),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue,
+                              ),
+                              child: const Text(
+                                "Yes",
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+
+                    // ✅ FIX 1
+                    if (!mounted) return;
+
+                    if (confirm != true) return;
+
+                    try {
+                      await FirebaseFirestore.instance
+                          .collection('jobs')
+                          .doc(jobId)
+                          .update({
+                        'status': 'completed',
+                        'completedAt': Timestamp.now(),
+                      });
+
+                      // ✅ FIX 2
+                      if (!mounted) return;
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Job marked as completed"),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+
+                      Navigator.pop(context);
+
+                    } catch (e) {
+                      // ✅ FIX 3
+                      if (!mounted) return;
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text("Error: $e"),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryBlue,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    "Mark as Completed",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryBlue,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text(
-              "Mark as Completed",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
