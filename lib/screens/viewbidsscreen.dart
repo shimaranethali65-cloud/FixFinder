@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../constants/app_colors.dart';
 import '../widgets/active_job_card.dart';
 import '../widgets/worker_bid_card.dart';
+import 'viewprofilescreen.dart';
 
 class ViewBidsScreen extends StatelessWidget {
   final String jobId; // pass this when navigating
@@ -63,7 +64,7 @@ class ViewBidsScreen extends StatelessWidget {
           }
 
           final jobData = jobSnap.data!.data() as Map<String, dynamic>? ?? {};
-          final jobTitle = jobData['title'] ?? 'No Title';
+          final jobTitle = jobData['description'] ?? 'No Description';
           final jobStatus = jobData['status'] ?? 'Waiting for Bids';
 
           return StreamBuilder<QuerySnapshot>(
@@ -137,15 +138,17 @@ class ViewBidsScreen extends StatelessWidget {
                             price: double.tryParse(data['price'].toString()) ?? 0,
                             isTopRated: data['isTopRated'] ?? false,
                             onViewProfile: () {
-                              Navigator.pushNamed(
-                                context,
-                                '/workerProfile',
-                                arguments: {
-                                  'workerId': data['workerId'],
-                                  'workerName': workerName,
-                                },
-                              );
-                            },
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => ViewProfileScreen(
+        workerId: data['workerId'],
+        workerName: workerName,
+        bidPrice: double.tryParse(data['price'].toString()) ?? 0,
+      ),
+    ),
+  );
+},
                             onSelect: () async {
                               final confirm = await showDialog<bool>(
                                 context: context,
@@ -202,7 +205,7 @@ class ViewBidsScreen extends StatelessWidget {
 
   await chatRef.set({
     'jobId': jobId,
-    'customerId': jobData['postedById'], // 👈 IMPORTANT
+    'customerId': jobData['postedById'], 
     'workerId': data['workerId'],
     'lastMessage': '',
     'timestamp': FieldValue.serverTimestamp(),

@@ -259,6 +259,7 @@ class ViewProfileScreen extends StatelessWidget {
               ),
 
               // ── Hire button pinned at bottom ──
+              /*
               Container(
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
                 decoration: BoxDecoration(
@@ -274,11 +275,11 @@ class ViewProfileScreen extends StatelessWidget {
                 child: AppButton(
                   label: 'Hire Worker — \$${bidPrice.toInt()}',
                   onPressed: () {
-                    // TODO: trigger hire / navigate to booking confirmation
                   },
                   width: double.infinity,
                 ),
               ),
+              */
             ],
           );
         },
