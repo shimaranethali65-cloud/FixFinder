@@ -192,6 +192,32 @@ class ViewBidsScreen extends StatelessWidget {
   'status': 'assigned',                  
   'selectedWorkerName': workerName,      
 });
+
+// 🔥 2. CREATE CHAT (THIS IS NEW)
+  final chatId = jobId;
+
+  final chatRef = FirebaseFirestore.instance
+      .collection('chats')
+      .doc(chatId);
+
+  await chatRef.set({
+    'jobId': jobId,
+    'customerId': jobData['postedById'], // 👈 IMPORTANT
+    'workerId': data['workerId'],
+    'lastMessage': '',
+    'timestamp': FieldValue.serverTimestamp(),
+  }, SetOptions(merge: true));
+                                                          
+  // 🔹 3. UI FEEDBACK
+  if (context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$workerName selected!'),
+        backgroundColor: AppColors.primaryBlue,
+      ),
+    );
+  }
+}
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context)
                                       .showSnackBar(
@@ -204,7 +230,7 @@ class ViewBidsScreen extends StatelessWidget {
                                   );
                                 }
                               }
-                            },
+                            ,
                           );
                         },
                       ),
