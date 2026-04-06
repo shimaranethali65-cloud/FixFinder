@@ -51,7 +51,6 @@ class FixFinderApp extends StatelessWidget {
             initialIndex: (args is Map && args["index"] != null)
                 ? args["index"]
                 : 0,
-            
           );
         },
 

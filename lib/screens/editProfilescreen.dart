@@ -37,29 +37,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController _confirmPasswordController =
       TextEditingController();
 
-  final List<String> _jobTitles = [
-    'Electrician',
-    'Tile Installer',
-    'Ceiling Repair Technician',
-    'Appliance Repair Technician',
-    'Gardener',
-    'Handyman',
-    'Painter',
-    'Carpenter',
-    'Mason',
-    'Plumber',
-    'Other',
-  ];
-
   @override
   void initState() {
     super.initState();
     _nameController.text = widget.initialName;
     _emailController.text = widget.initialEmail;
-    if (widget.initialRole.isNotEmpty &&
-        _jobTitles.contains(widget.initialRole)) {
-      _selectedJobTitle = widget.initialRole;
-    }
   }
 
   @override
@@ -155,31 +137,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           : null,
                     ),
                     const SizedBox(height: 14),
-                    InputDecorator(
-                      decoration: _fieldDecoration('Job Title'),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _selectedJobTitle,
-                          isDense: true,
-                          isExpanded: true,
-                          hint: const Text('Select job title'),
-                          items: _jobTitles
-                              .map(
-                                (title) => DropdownMenuItem(
-                                  value: title,
-                                  child: Text(title),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedJobTitle = value;
-                            });
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
                     TextFormField(
                       controller: _emailController,
                       decoration: _fieldDecoration('Email'),
@@ -254,4 +211,3 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 }
-

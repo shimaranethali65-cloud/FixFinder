@@ -1,147 +1,119 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class MyJobsScreen extends StatelessWidget {
   const MyJobsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    const jobs = <String>[
-      'Installed new kitchen sink',
-      'Repaired leaking shower head',
-      'Fixed toilet flush system',
-      'Sealed pipe joint leak',
-    ];
+    final user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 1,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 18),
-          onPressed: () => Navigator.of(context).maybePop(),
-        ),
         title: const Text(
-          'My Jobs',
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600),
+          "My Jobs",
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        centerTitle: false,
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: const [
-                  _GradientIconCircle(),
-                  SizedBox(width: 12),
-                  Text(
-                    'Jobs You Completed',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+      body: user == null
+          ? const Center(child: Text("Please log in"))
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Icon(Icons.check_circle, color: Color(0xFF35B64A)),
+                      SizedBox(width: 10),
+                      Text(
+                        "Jobs You Completed",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              const SizedBox(height: 22),
-              Expanded(
-                child: ListView.separated(
-                  itemCount: jobs.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 18),
-                  itemBuilder: (context, index) {
-                    return _CompletedJobCard(title: jobs[index]);
-                  },
                 ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
+                Expanded(
+                  child: StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('jobs')
+                        .where(
+                          'assignedTo',
+                          isEqualTo: FirebaseAuth.instance.currentUser?.uid,
+                        )
+                        .where(
+                          'status',
+                          isEqualTo: 'completed',
+                        ) // Only show finished jobs
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData)
+                        return const Center(child: CircularProgressIndicator());
 
-class _CompletedJobCard extends StatelessWidget {
-  const _CompletedJobCard({required this.title});
+                      final completedJobs = snapshot.data!.docs;
 
-  final String title;
+                      if (completedJobs.isEmpty) {
+                        return const Center(
+                          child: Text("No completed jobs yet!"),
+                        );
+                      }
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF2F7CFF), width: 1.6),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      return ListView.builder(
+                        itemCount: completedJobs.length,
+                        itemBuilder: (context, index) {
+                          final job =
+                              completedJobs[index].data()
+                                  as Map<String, dynamic>;
+
+                          return Container(
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: const Color(0xFF4DA6FF),
+                                width: 1.5,
+                              ), // That Blue Border!
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    job['description'] ?? "No Title",
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                ),
+                                const Icon(
+                                  Icons.check_circle,
+                                  color: Color(0xFF4DB6AC),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
-          ),
-          const _GradientCheckBadge(),
-        ],
-      ),
-    );
-  }
-}
-
-class _GradientIconCircle extends StatelessWidget {
-  const _GradientIconCircle();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 26,
-      height: 26,
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          colors: [Color(0xFF23D26B), Color(0xFF0AA84F)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: const Icon(Icons.check, color: Colors.white, size: 18),
-    );
-  }
-}
-
-class _GradientCheckBadge extends StatelessWidget {
-  const _GradientCheckBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 30,
-      height: 30,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: const LinearGradient(
-          colors: [Color(0xFF2E86FF), Color(0xFF1CCB5C)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: const Icon(Icons.check, color: Colors.white, size: 18),
     );
   }
 }
