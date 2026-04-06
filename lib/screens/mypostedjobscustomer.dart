@@ -66,7 +66,7 @@ class MyPostedJobsScreen extends StatelessWidget {
                     final job =
                         jobs[index].data() as Map<String, dynamic>;
 
-                    final jobId = job['jobId'];
+                    final jobId = jobs[index].id;
 
                     return Container(
                       margin: const EdgeInsets.only(bottom: 14),

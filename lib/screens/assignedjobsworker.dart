@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'myjobsscreen.dart';
+import 'chat_screen.dart'; // ✅ ADD THIS
 
 class WorkerAssignedJobsScreen extends StatefulWidget {
   const WorkerAssignedJobsScreen({super.key});
@@ -27,10 +28,7 @@ class _WorkerAssignedJobsScreenState extends State<WorkerAssignedJobsScreen> {
               stream: FirebaseFirestore.instance
                   .collection('jobs')
                   .where('assignedTo', isEqualTo: user!.uid)
-                  .where(
-                    'status',
-                    isEqualTo: 'assigned',
-                  ) // Only show active tasks here
+                  .where('status', isEqualTo: 'assigned')
                   .snapshots(),
 
               builder: (context, snapshot) {
@@ -49,13 +47,7 @@ class _WorkerAssignedJobsScreenState extends State<WorkerAssignedJobsScreen> {
                   itemCount: jobs.length,
                   itemBuilder: (context, index) {
                     final job = jobs[index].data() as Map<String, dynamic>;
-
                     final jobId = jobs[index].id;
-                    final status = job['status'] ?? 'assigned';
-
-                    /// 🔍 DEBUG (remove later if needed)
-                    print("Worker UID: ${user!.uid}");
-                    print("AssignedTo: ${job['assignedTo']}");
 
                     return Container(
                       margin: const EdgeInsets.only(bottom: 14),
@@ -116,70 +108,131 @@ class _WorkerAssignedJobsScreenState extends State<WorkerAssignedJobsScreen> {
 
                           const SizedBox(height: 14),
 
-                          /// 🔹 BUTTON / STATUS
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () async {
-                                final confirm = await showDialog<bool>(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    title: const Text("Complete Job"),
-                                    content: const Text(
-                                      "Mark this job as completed?",
+                          /// 🔹 BUTTONS (CHAT + COMPLETE)
+                          Row(
+                            children: [
+
+                              /// 💬 CHAT BUTTON
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: () async {
+                                    final customerId = job['postedById'];
+                                    final workerId = user!.uid;
+
+                                    /// 🔍 Check if chat exists
+                                    final query = await FirebaseFirestore.instance
+                                        .collection('chats')
+                                        .where('jobId', isEqualTo: jobId)
+                                        .where('workerId', isEqualTo: workerId)
+                                        .get();
+
+                                    String chatId;
+
+                                    if (query.docs.isNotEmpty) {
+                                      chatId = query.docs.first.id;
+                                    } else {
+                                      /// ➕ Create chat
+                                      final doc = await FirebaseFirestore.instance
+                                          .collection('chats')
+                                          .add({
+                                        'jobId': jobId,
+                                        'customerId': customerId,
+                                        'workerId': workerId,
+                                        'participants': [customerId, workerId],
+                                        'lastMessage': '',
+                                        'timestamp': FieldValue.serverTimestamp(),
+                                      });
+
+                                      chatId = doc.id;
+                                    }
+
+                                    /// 🚀 OPEN CHAT SCREEN
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            ChatScreen(chatId: chatId),
+                                      ),
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.green,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
                                     ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(context, false),
-                                        child: const Text("Cancel"),
-                                      ),
-                                      ElevatedButton(
-                                        onPressed: () =>
-                                            Navigator.pop(context, true),
-                                        child: const Text("Yes"),
-                                      ),
-                                    ],
                                   ),
-                                );
-
-                                if (confirm == true) {
-                                  await FirebaseFirestore.instance
-                                      .collection('jobs')
-                                      .doc(jobs[index].id)
-                                      .update({'status': 'completed'});
-
-                                  if (!mounted) return;
-
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const MyJobsScreen(),
-                                    ),
-                                  );
-
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        "Job completed successfully!",
-                                      ),
-                                      backgroundColor: Colors.green,
-                                    ),
-                                  );
-                                }
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
+                                  child: const Text(
+                                    "Chat",
+                                    style: TextStyle(color: Colors.white),
+                                  ),
                                 ),
                               ),
-                              child: const Text(
-                                "Mark as Completed",
-                                style: TextStyle(color: Colors.white),
+
+                              const SizedBox(width: 10),
+
+                              /// ✅ MARK AS COMPLETED
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: () async {
+                                    final confirm = await showDialog<bool>(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: const Text("Complete Job"),
+                                        content: const Text(
+                                            "Mark this job as completed?"),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context, false),
+                                            child: const Text("Cancel"),
+                                          ),
+                                          ElevatedButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context, true),
+                                            child: const Text("Yes"),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+
+                                    if (confirm == true) {
+                                      await FirebaseFirestore.instance
+                                          .collection('jobs')
+                                          .doc(jobId)
+                                          .update({'status': 'completed'});
+
+                                      if (!mounted) return;
+
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const MyJobsScreen(),
+                                        ),
+                                      );
+
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                              "Job completed successfully!"),
+                                          backgroundColor: Colors.green,
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blue,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    "Completed",
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
                           ),
                         ],
                       ),
