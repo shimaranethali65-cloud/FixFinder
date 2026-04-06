@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 // Screens
 import 'homescreencustomer.dart';
 import 'createjobscreen.dart';
-import 'chatscreen.dart';
+import 'chat_list_screen.dart';
 import 'profilescreencustomer.dart';
 import 'mypostedjobscustomer.dart';
 
@@ -23,11 +23,11 @@ class _CustomerNavBarState extends State<CustomerNavBar> {
   late int _selectedIndex;
 
   // ✅ Keep screens const for performance
-  final List<Widget> _screens = const [
+  final List<Widget> _screens = [
     HomeScreenCustomer(),
     MyPostedJobsScreen(),
     CreateJobScreen(),
-    ChatScreen(),
+    ChatListScreen(),
     ProfileScreenCustomer(),
   ];
 
