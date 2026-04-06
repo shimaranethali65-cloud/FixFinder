@@ -126,7 +126,7 @@ class _HomeScreenCustomerState extends State<HomeScreenCustomer> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => const CustomerNavBar(initialIndex: 1),
+            builder: (_) => const CustomerNavBar(initialIndex: 2),
           ),
         );
       },
