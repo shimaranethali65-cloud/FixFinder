@@ -7,6 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'jobdetailsscreen.dart';
 
 
 import '../constants/app_colors.dart';
@@ -160,20 +161,17 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
     });
 
     // ✅ GO TO NAVBAR + SHOW JOB DETAILS
-    Navigator.pushNamed(
-      context,
-      '/home',
-      arguments: {
-        "index": 0,
-        "showJobDetails": true,
-        "jobData": {
-          "category": selectedJob,
-          "description": descriptionController.text,
-          "location": locationText,
-          "jobId": jobId,
-        }
-      },
-    );
+    Navigator.pushReplacement(
+  context,
+  MaterialPageRoute(
+    builder: (_) => JobDetailsScreen(
+  jobId: jobId,
+  category: selectedJob,
+  description: descriptionController.text,
+  location: locationText,
+),
+  ),
+);
   }
 
   @override
