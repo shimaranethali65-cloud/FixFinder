@@ -51,10 +51,7 @@ class FixFinderApp extends StatelessWidget {
             initialIndex: (args is Map && args["index"] != null)
                 ? args["index"]
                 : 0,
-            showJobDetails: (args is Map && args["showJobDetails"] != null)
-                ? args["showJobDetails"]
-                : false,
-            jobData: (args is Map) ? args["jobData"] : null,
+            
           );
         },
 

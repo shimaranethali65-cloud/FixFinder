@@ -6,6 +6,9 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'jobdetailsscreen.dart';
+
 
 import '../constants/app_colors.dart';
 
@@ -132,6 +135,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
 
   // 🔥 UPDATED NAVIGATION
   Future<void> _postJob() async {
+    final user = FirebaseAuth.instance.currentUser;
     if (descriptionController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Enter description")),
@@ -152,23 +156,22 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
       'location': locationText,
       'status': 'waiting',
       'createdAt': Timestamp.now(),
+      'postedBy': user?.email ?? "User",
+  'postedById': user?.uid,
     });
 
     // ✅ GO TO NAVBAR + SHOW JOB DETAILS
-    Navigator.pushNamed(
-      context,
-      '/home',
-      arguments: {
-        "index": 0,
-        "showJobDetails": true,
-        "jobData": {
-          "category": selectedJob,
-          "description": descriptionController.text,
-          "location": locationText,
-          "jobId": jobId,
-        }
-      },
-    );
+    Navigator.pushReplacement(
+  context,
+  MaterialPageRoute(
+    builder: (_) => JobDetailsScreen(
+  jobId: jobId,
+  category: selectedJob,
+  description: descriptionController.text,
+  location: locationText,
+),
+  ),
+);
   }
 
   @override
@@ -225,9 +228,9 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: const Color.fromARGB(255, 250, 251, 251),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.blue),
+                          border: Border.all(color: const Color.fromARGB(255, 227, 229, 230)),
                         ),
                         child: Row(
                           mainAxisAlignment:

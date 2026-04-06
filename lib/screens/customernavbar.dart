@@ -5,20 +5,14 @@ import 'homescreencustomer.dart';
 import 'createjobscreen.dart';
 import 'chatscreen.dart';
 import 'profilescreencustomer.dart';
-import 'jobdetailsscreen.dart';
+import 'mypostedjobscustomer.dart'; 
 
 class CustomerNavBar extends StatefulWidget {
   final int initialIndex;
 
-  // 🔥 NEW
-  final bool showJobDetails;
-  final dynamic jobData;
-
   const CustomerNavBar({
     super.key,
     this.initialIndex = 0,
-    this.showJobDetails = false,
-    this.jobData,
   });
 
   @override
@@ -28,9 +22,9 @@ class CustomerNavBar extends StatefulWidget {
 class _CustomerNavBarState extends State<CustomerNavBar> {
   late int _selectedIndex;
 
-  // ✅ Normal screens
   final List<Widget> _screens = [
     const HomeScreenCustomer(),
+    const MyPostedJobsScreen(), 
     const CreateJobScreen(),
     const ChatScreen(),
     const ProfileScreenCustomer(),
@@ -39,9 +33,7 @@ class _CustomerNavBarState extends State<CustomerNavBar> {
   @override
   void initState() {
     super.initState();
-
-    // 🔥 If coming from JobDetails → force Home tab
-    _selectedIndex = widget.showJobDetails ? 0 : widget.initialIndex;
+    _selectedIndex = widget.initialIndex;
   }
 
   void _onItemTapped(int index) {
@@ -52,38 +44,24 @@ class _CustomerNavBarState extends State<CustomerNavBar> {
 
   @override
   Widget build(BuildContext context) {
-    Widget body;
-
-    // 🔥 SHOW JOB DETAILS INSIDE NAVBAR
-    if (widget.showJobDetails && widget.jobData != null) {
-      body = JobDetailsScreen(
-        // The ?? "" means: "If this is null, use an empty text instead"
-        jobId: widget.jobData?["jobId"] ?? "no_id",
-        workerUID: widget.jobData?["workerUID"] ?? "no_uid",
-        category: widget.jobData?["category"] ?? "General",
-        description:
-            widget.jobData?["description"] ?? "No description provided",
-        location: widget.jobData?["location"] ?? "Location not available",
-      );
-    } else {
-      body = IndexedStack(index: _selectedIndex, children: _screens);
-    }
-
     return Scaffold(
-      body: body,
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _screens,
+      ),
 
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
+        onTap: _onItemTapped,
         selectedItemColor: Colors.blue,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.work), // 👈 NEW
+            label: "My Jobs",
+          ),
           BottomNavigationBarItem(
             icon: Icon(Icons.add_circle),
             label: "Create",

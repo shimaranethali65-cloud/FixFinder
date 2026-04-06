@@ -33,7 +33,9 @@ class ViewBidsScreen extends StatelessWidget {
     // Fetch the job doc to show in the banner
     final jobRef = FirebaseFirestore.instance.collection('jobs').doc(jobId);
     // Fetch bids subcollection
-    final bidsRef = jobRef.collection('bids');
+    final bidsRef = FirebaseFirestore.instance
+    .collection('bids')
+    .where('jobId', isEqualTo: jobId);
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
@@ -65,7 +67,7 @@ class ViewBidsScreen extends StatelessWidget {
           final jobStatus = jobData['status'] ?? 'Waiting for Bids';
 
           return StreamBuilder<QuerySnapshot>(
-            stream: bidsRef.orderBy('price').snapshots(),
+            stream: bidsRef.orderBy('createdAt', descending: true).snapshots(),
             builder: (context, bidsSnap) {
               if (!bidsSnap.hasData) {
                 return const Center(child: CircularProgressIndicator());
@@ -122,8 +124,7 @@ class ViewBidsScreen extends StatelessWidget {
                         itemBuilder: (context, i) {
                           final data =
                               bids[i].data() as Map<String, dynamic>;
-                          final workerName =
-                              data['workerName'] ?? 'Unknown';
+                          final workerName = data['workerEmail'] ?? 'Worker';
 
                           return WorkerBidCard(
                             name: workerName,
@@ -133,7 +134,7 @@ class ViewBidsScreen extends StatelessWidget {
                                 (data['rating'] ?? 4.6).toDouble(),
                             profession:
                                 data['profession'] ?? 'Worker',
-                            price: (data['price'] ?? 0).toDouble(),
+                            price: double.tryParse(data['price'].toString()) ?? 0,
                             isTopRated: data['isTopRated'] ?? false,
                             onViewProfile: () {
                               Navigator.pushNamed(

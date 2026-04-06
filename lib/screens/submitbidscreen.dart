@@ -1,104 +1,162 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class SubmitBidPage extends StatelessWidget {
-  const SubmitBidPage({super.key});
+class SubmitBidPage extends StatefulWidget {
+  final String jobId;
+
+  const SubmitBidPage({super.key, required this.jobId});
+
+  @override
+  State<SubmitBidPage> createState() => _SubmitBidPageState();
+}
+
+class _SubmitBidPageState extends State<SubmitBidPage> {
+  final TextEditingController priceController = TextEditingController();
+  final TextEditingController messageController = TextEditingController();
+
+  bool isLoading = false;
+
+  Future<void> submitBid() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (priceController.text.isEmpty || messageController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Fill all fields")),
+      );
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    String bidId = DateTime.now().millisecondsSinceEpoch.toString();
+
+    await FirebaseFirestore.instance.collection('bids').doc(bidId).set({
+      'bidId': bidId,
+      'jobId': widget.jobId,
+      'price': priceController.text,
+      'message': messageController.text,
+      'workerEmail': user?.email,
+      'workerId': user?.uid,
+      'createdAt': Timestamp.now(),
+    });
+
+    setState(() => isLoading = false);
+
+    Navigator.pop(context);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Bid submitted successfully")),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: const Color(0xFFF5F7FB),
+
       appBar: AppBar(
-        elevation: 0,
         backgroundColor: Colors.white,
-        centerTitle: true,
+        elevation: 0,
         title: const Text(
           "Submit Bid",
           style: TextStyle(color: Colors.black),
         ),
-        leading: const Icon(Icons.arrow_back, color: Colors.black),
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: Colors.black),
       ),
+
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Your Price:",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
 
-            const SizedBox(height: 10),
-
+            /// 💰 PRICE CARD
             Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 25, vertical: 10),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.blue[200],
-                borderRadius: BorderRadius.circular(25),
+                gradient: const LinearGradient(
+                  colors: [Color.fromARGB(255, 245, 246, 247), Color.fromARGB(255, 253, 253, 253)],
+                ),
+                borderRadius: BorderRadius.circular(16),
               ),
-              child: const Text(
-                "\$20",
-                style: TextStyle(fontWeight: FontWeight.bold),
+              child: Row(
+                children: [
+                  const Icon(Icons.attach_money, color: Color.fromARGB(255, 13, 13, 13)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextField(
+                      controller: priceController,
+                      keyboardType: TextInputType.number,
+                      style: const TextStyle(color: Color.fromARGB(255, 13, 13, 13)),
+                      decoration: const InputDecoration(
+                        hintText: "Enter your price",
+                        hintStyle: TextStyle(color: Color.fromARGB(179, 15, 15, 15)),
+                        border: InputBorder.none,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
 
-            const SizedBox(height: 25),
+            const SizedBox(height: 20),
 
-            const Text(
-              "Massage:",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-
-            const SizedBox(height: 10),
-
-            TextField(
-              maxLines: 4,
-              decoration: InputDecoration(
-                hintText: "Type message here .....",
-                filled: true,
-                fillColor: Colors.blue[50],
-                contentPadding: const EdgeInsets.all(12),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                  borderSide: BorderSide.none,
+            /// 💬 MESSAGE CARD
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                  )
+                ],
+              ),
+              child: TextField(
+                controller: messageController,
+                maxLines: 4,
+                decoration: const InputDecoration(
+                  hintText: "Write your message...",
+                  border: InputBorder.none,
                 ),
               ),
             ),
 
             const SizedBox(height: 30),
 
-            Center(
+            /// 🔵 SUBMIT BUTTON
+            SizedBox(
+              width: double.infinity,
+              height: 55,
               child: ElevatedButton(
+                onPressed: isLoading ? null : submitBid,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 70, vertical: 15),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30)),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (_) => Dialog(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+                child: isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text(
+                        "Submit Bid",
+                        style: TextStyle(fontSize: 16,color: Colors.white,),
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: const [
-                            Icon(Icons.star, size: 80, color: Colors.black),
-                            SizedBox(height: 15),
-                            Icon(Icons.check_circle,
-                                color: Colors.green, size: 40),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
-                child: const Text("Submit Bit"),
+              ),
+            ),
+
+            const SizedBox(height: 30),
+
+            /// 🎨 IMAGE
+            Expanded(
+              child: Center(
+                child: Image.asset(
+                  "assets/images/submitbid.png",
+                  height: 250,
+                ),
               ),
             ),
           ],
