@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../constants/app_colors.dart';
 import 'viewbidsscreen.dart';
+import 'rating_screen.dart'; // ✅ NEW
 
 class JobDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> jobData;
@@ -20,13 +21,14 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
   @override
   Widget build(BuildContext context) {
 
-    // ✅ SAFE DATA EXTRACTION
+    /// ✅ DATA
     final category = widget.jobData['category'] ?? "N/A";
     final description = widget.jobData['description'] ?? "N/A";
     final location = widget.jobData['location'] ?? "N/A";
     final jobId = widget.jobData['jobId'] ?? "";
     final status = widget.jobData['status'] ?? "waiting";
     final postedBy = widget.jobData['postedBy'] ?? "User";
+    final isRated = widget.jobData['isRated'] ?? false; // ⭐ NEW
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -57,7 +59,6 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
 
                 const SizedBox(height: 20),
 
-                /// SUCCESS TEXT
                 const Text(
                   "Post Successful!",
                   style: TextStyle(
@@ -78,7 +79,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
 
                 const SizedBox(height: 40),
 
-                /// DETAILS BOX
+                /// DETAILS
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
@@ -113,9 +114,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                         children: [
                           Expanded(
                             child: OutlinedButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
+                              onPressed: () => Navigator.pop(context),
                               child: const Text("Cancel"),
                             ),
                           ),
@@ -155,99 +154,108 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
         ),
       ),
 
-      /// MARK AS COMPLETED BUTTON
+      /// 🔥 DYNAMIC BUTTON
       bottomNavigationBar: jobId.isEmpty
           ? null
           : Padding(
               padding: const EdgeInsets.all(16),
               child: SizedBox(
                 height: 50,
-                child: ElevatedButton(
-                  onPressed: () async {
 
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          title: const Text("Complete Job"),
-                          content: const Text(
-                            "Are you sure you want to mark this job as completed?",
+                child: status != 'completed'
+
+                    /// 🔵 MARK AS COMPLETED
+                    ? ElevatedButton(
+                        onPressed: () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (context) {
+                              return AlertDialog(
+                                title: const Text("Complete Job"),
+                                content: const Text(
+                                  "Are you sure you want to mark this job as completed?",
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, false),
+                                    child: const Text("Cancel"),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, true),
+                                    child: const Text("Yes"),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+
+                          if (!mounted) return;
+                          if (confirm != true) return;
+
+                          await FirebaseFirestore.instance
+                              .collection('jobs')
+                              .doc(jobId)
+                              .update({
+                            'status': 'completed',
+                            'completedAt': Timestamp.now(),
+                          });
+
+                          if (!mounted) return;
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Job marked as completed"),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+
+                          Navigator.pop(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryBlue,
+                        ),
+                        child: const Text(
+                          "Mark as Completed",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      )
+
+                    /// ⭐ RATE WORKER
+                    : !isRated
+                        ? ElevatedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => RatingScreen(
+                                    workerId:
+                                        widget.jobData['assignedTo'],
+                                    jobId: jobId,
+                                  ),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orange,
+                            ),
+                            child: const Text(
+                              "Rate Worker ⭐",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          )
+
+                        /// ✅ ALREADY RATED
+                        : const Center(
+                            child: Text(
+                              "You already rated this worker",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green,
+                              ),
+                            ),
                           ),
-                          actions: [
-                            TextButton(
-                              onPressed: () =>
-                                  Navigator.pop(context, false),
-                              child: const Text("Cancel"),
-                            ),
-                            ElevatedButton(
-                              onPressed: () =>
-                                  Navigator.pop(context, true),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue,
-                              ),
-                              child: const Text(
-                                "Yes",
-                                style: TextStyle(color: Colors.white),
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-
-                    // ✅ FIX 1
-                    if (!mounted) return;
-
-                    if (confirm != true) return;
-
-                    try {
-                      await FirebaseFirestore.instance
-                          .collection('jobs')
-                          .doc(jobId)
-                          .update({
-                        'status': 'completed',
-                        'completedAt': Timestamp.now(),
-                      });
-
-                      // ✅ FIX 2
-                      if (!mounted) return;
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Job marked as completed"),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
-
-                      Navigator.pop(context);
-
-                    } catch (e) {
-                      // ✅ FIX 3
-                      if (!mounted) return;
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text("Error: $e"),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryBlue,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    "Mark as Completed",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
               ),
             ),
     );
